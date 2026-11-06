@@ -62,19 +62,41 @@
   const other = () => { const q = encodeURIComponent($('q').value.trim()); $('toTT').href = 'https://www.tiktok.com/search?q=' + q; $('toIG').href = 'https://www.instagram.com/explore/search/keyword/?q=' + q; };
   $('q').addEventListener('input', other); other();
 
-  /* ── 오늘 쓴 양 (구글 무료: 하루 10,000점 · 검색 100점) ── */
-  const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });   // 구글은 미국 서부 자정에 다시 채워요
-  const quota = add => { let q = {}; try { q = JSON.parse(LS('bkRefQuota') || '{}'); } catch (e) { /* 없음 */ } if (q.d !== today()) q = { d: today(), u: 0 }; if (add) { q.u += add; LS('bkRefQuota', JSON.stringify(q)); } $('quota').textContent = `오늘 검색 약 ${Math.floor(q.u / 100)}번 · 하루 약 100번까지 무료 (오후 4~5시쯤 다시 채워져요)`; };
+  /* ── 🔋 오늘 쓴 양 (구글 무료: 하루 10,000점 · 검색 1번 100점 · 조회수 확인 1점) — 이 휴대폰에서 쓴 것만 세요 ── */
+  const DAY = 10000;
+  const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });   // 구글은 미국 서부 자정(한국 오후 4~5시)에 다시 채워요
+  function quota(add, full) {
+    let q = {}; try { q = JSON.parse(LS('bkRefQuota') || '{}'); } catch (e) { /* 없음 */ }
+    if (q.d !== today()) q = { d: today(), u: 0, n: 0 };
+    if (add) { q.u += add; if (add >= 100) q.n = (q.n || 0) + 1; }
+    if (full) q.u = Math.max(q.u, DAY);
+    if (add || full) LS('bkRefQuota', JSON.stringify(q));
+    const left = Math.max(0, DAY - q.u), pct = left / DAY, can = Math.floor(left / 101), col = pct > .5 ? '#16a34a' : pct > .1 ? '#f59e0b' : '#dc2626';
+    $('qBar').innerHTML = `<div class="qt">🔋 오늘 유튜브 무료 검색 <small>(이 휴대폰 기준)</small></div>
+      <div class="qtrack"><i style="width:${(pct * 100).toFixed(1)}%;background:${col}"></i></div>
+      <div class="qn"><b style="color:${col}">남은 ${left.toLocaleString()}점</b> / 10,000점</div>
+      <div class="qs">오늘 <b>${q.n || 0}번</b> 검색함 · 약 <b>${can}번</b> 더 할 수 있어요</div>
+      <div class="qs2">검색 1번 = 100점 (결과 최대 50개) · 쪽 넘기기 · ▶ 보기는 0점 · 매일 오후 4~5시쯤 다시 10,000점</div>`;
+    return left;
+  }
   quota(0);
+  async function canSpend() {   // 찾기 전에 남은 점수 확인
+    const left = quota(0);
+    if (left < 100) { alert('🔋 오늘 무료 검색을 다 썼어요.\n오후 4~5시쯤 다시 10,000점으로 채워져요.\n\n(지금 받은 결과는 쪽을 넘기며 계속 볼 수 있어요)'); return false; }
+    if (left < 1000) return confirm(`🔋 오늘 남은 점수가 ${left.toLocaleString()}점이에요 (검색 약 ${Math.floor(left / 101)}번).\n\n100점을 써서 찾을까요?`);
+    if (left < 2000) toast(`🔋 오늘 남은 검색이 약 ${Math.floor(left / 101)}번이에요`, 2600);
+    return true;
+  }
 
   /* ── 유튜브 검색 ── */
-  let NEXT = '', LAST = '', SEEN = new Set(), busy = false;
+  let NEXT = '', LAST = '', SEEN = new Set(), busy = false, RES = [], PG = 0, INFO = '', ERR = '';
+  const PER = 10;
   async function api(path, p) {
     const u = API + path + '?' + new URLSearchParams(Object.assign({ key: key() }, p)).toString();
     const r = await fetch(u); const j = await r.json().catch(() => ({}));
     if (!r.ok || j.error) {
       const why = (j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || '', msg = (j.error && j.error.message) || '';
-      if (/quota/i.test(why)) throw new Error('오늘 무료 검색을 다 썼어요. 내일(오후 4~5시쯤 뒤) 다시 해 주세요.');
+      if (/quota/i.test(why)) { quota(0, true); throw new Error('오늘 무료 검색을 다 썼어요. 오후 4~5시쯤 다시 채워져요. (다른 휴대폰 · 프로그램에서 같은 키를 썼을 수도 있어요)'); }
       if (/keyInvalid|API key not valid/i.test(why + msg)) throw new Error('검색 키가 맞지 않아요. 「🔑 검색 키 바꾸기」에서 다시 넣어 주세요.');
       if (/referer|referrer|blocked/i.test(why + msg)) throw new Error('키 잠금 설정에 이 주소가 없어요. 키 「웹사이트 제한」에 https://bangkeukryul.github.io/* 를 넣어 주세요.');
       if (/accessNotConfigured|disabled|has not been used/i.test(why + msg)) throw new Error('구글 클라우드에서 「YouTube Data API v3」 사용 버튼을 눌러 주세요.');
@@ -87,53 +109,69 @@
     const j = await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 });
     return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
   }
-  async function search(more) {
-    if (busy) return; const q = $('q').value.trim(); if (!q) { $('q').focus(); return; }
-    if (!key()) { showKey(true); $('keyBox').scrollIntoView({ behavior: 'smooth' }); return toast('먼저 🔑 검색 키를 넣어 주세요'); }
-    if (!more) { NEXT = ''; SEEN = new Set(); $('res').innerHTML = ''; LAST = q; }
-    busy = true; const btn = $('rMore'); if (btn) btn.remove();
-    const wait = document.createElement('p'); wait.className = 'rmsg'; wait.textContent = '🔎 찾는 중…'; $('res').appendChild(wait);
-    try {
-      const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd, regionCode: 'KR', relevanceLanguage: 'ko', safeSearch: 'moderate' };
-      if (OPT.sLen === 'short') p.videoDuration = 'short';
-      if (+OPT.sWhen) p.publishedAfter = new Date(Date.now() - OPT.sWhen * 864e5).toISOString();
-      if (NEXT) p.pageToken = NEXT;
-      quota(100); const j = await api('search', p); NEXT = j.nextPageToken || '';
-      const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
-      let list = await details(ids);
-      const got = list.length;
-      list = list.filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)));
-      if (OPT.sOrd === 'viewCount') list.sort((a, b) => b.views - a.views);
-      wait.remove();
-      const saved = new Set((await all()).map(r => r.id));
-      list.forEach(v => $('res').insertAdjacentHTML('beforeend', card(v, saved.has(v.id), false)));
-      RES = RES.concat(list);
-      const info = document.createElement('p'); info.className = 'rhint'; info.style.textAlign = 'center';
-      info.textContent = `${got}개 중 조건에 맞는 ${list.length}개` + (list.length ? '' : ' — 최소 조회수 · 기간을 낮춰 보세요');
-      $('res').appendChild(info);
-      if (NEXT) $('res').insertAdjacentHTML('beforeend', '<button type="button" class="rmore" id="rMore">⬇ 더 찾기 (검색 1번 더 써요)</button>');
-    } catch (e) { wait.textContent = '⚠️ ' + e.message; }
-    busy = false;
+  async function onePage() {   // 검색 1번 (100점) → 조건에 맞는 것만
+    const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd, regionCode: 'KR', relevanceLanguage: 'ko', safeSearch: 'moderate' };
+    if (OPT.sLen === 'short') p.videoDuration = 'short';
+    if (+OPT.sWhen) p.publishedAfter = new Date(Date.now() - OPT.sWhen * 864e5).toISOString();
+    if (NEXT) p.pageToken = NEXT;
+    quota(100); const j = await api('search', p); NEXT = j.nextPageToken || '';
+    const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
+    const list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)));
+    if (OPT.sOrd === 'viewCount') list.sort((a, b) => b.views - a.views);
+    RES = RES.concat(list);
   }
-  let RES = [];
-  $('go').addEventListener('click', () => { RES = []; search(false); });
-  $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); RES = []; search(false); } });
-  $('res').addEventListener('click', e => { if (e.target.closest('#rMore')) { search(true); return; } act(e, false); });
+  async function search(more) {
+    if (busy) return; const q = $('q').value.trim();
+    if (!more && !q) { $('q').focus(); return; }
+    if (!key()) { showKey(true); $('keyBox').scrollIntoView({ behavior: 'smooth' }); return toast('먼저 🔑 검색 키를 넣어 주세요'); }
+    if (!(await canSpend())) return;
+    if (!more) { NEXT = ''; SEEN = new Set(); RES = []; PG = 0; LAST = q; }
+    const before = RES.length; busy = true; ERR = ''; drawRes('🔎 찾는 중…');
+    try {
+      await onePage();
+      if (RES.length - before < 5 && NEXT && quota(0) >= 200) { drawRes('🔎 조건에 맞는 영상이 적어서 한 번 더 찾는 중… (100점)'); await onePage(); }   // 한 번만 더
+      if (more && RES.length > before) PG = Math.floor(before / PER);
+    } catch (e) { ERR = '⚠️ ' + e.message; }
+    INFO = SEEN.size ? `유튜브에서 받은 ${SEEN.size}개 중 조건에 맞는 ${RES.length}개` + (RES.length ? '' : ' — 최소 조회수 · 기간을 낮춰 보세요') : '';
+    busy = false; drawRes();
+  }
+  function pager(n, pg) {
+    if (n < 2) return '';
+    return `<div class="ppages">${pg > 0 ? `<button type="button" data-pg="${pg - 1}">◀</button>` : ''}${Array.from({ length: n }, (_, i) => `<button type="button" data-pg="${i}"${i === pg ? ' class="on"' : ''}>${i + 1}</button>`).join('')}${pg < n - 1 ? `<button type="button" data-pg="${pg + 1}">▶</button>` : ''}</div>`;
+  }
+  async function drawRes(wait) {
+    const box = $('res');
+    if (wait) { box.innerHTML = (RES.length ? box.innerHTML : '') + `<p class="rmsg">${wait}</p>`; return; }
+    const saved = new Set((await all()).map(r => r.id)), n = Math.max(1, Math.ceil(RES.length / PER)); if (PG >= n) PG = n - 1;
+    box.innerHTML = (RES.length ? `<p class="rhint" style="text-align:center;margin:0">${PG * PER + 1}~${Math.min(RES.length, PG * PER + PER)}번째 · ${PG + 1}/${n}쪽</p>` : '')
+      + RES.slice(PG * PER, PG * PER + PER).map(v => card(v, saved.has(v.id), false)).join('')
+      + pager(n, PG) + (ERR ? `<p class="rmsg" style="color:#dc2626">${esc(ERR)}</p>` : '') + (INFO ? `<p class="rhint" style="text-align:center">${esc(INFO)}</p>` : '')
+      + (NEXT && PG === n - 1 ? '<button type="button" class="rmore" id="rMore">⬇ 다음 50개 더 찾기 (100점)</button>' : '');
+  }
+  $('go').addEventListener('click', () => search(false));
+  $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(false); } });
+  $('res').addEventListener('click', e => {
+    if (e.target.closest('#rMore')) { search(true); return; }
+    const pg = e.target.closest('[data-pg]'); if (pg) { PG = +pg.dataset.pg; drawRes(); $('res').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    act(e, false);
+  });
 
   /* ── 카드 ── */
   function card(v, saved, mine) {
     const meta = [v.views ? `<span class="vw">👀 ${views(v.views)}회</span>` : '', v.ch ? esc(v.ch) : '', v.date ? ymd(v.date) : ''].filter(Boolean).join(' · ');
     const memo = mine && ((v.tags && v.tags.length) || v.memo) ? `<p class="memo">${(v.tags || []).map(t => `<span>${esc(TAGTXT[t] || t)}</span>`).join('')}${esc(v.memo || '')}</p>` : '';
-    return `<div class="rv" data-id="${esc(v.id)}"><div class="th" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}</div>
-      <div style="min-width:0"><b>${esc(v.title || v.url)}</b><small>${meta}</small>
-      <div class="acts">${v.kind === 'yt' ? '<button type="button" data-a="play">▶ 보기</button>' : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
+    const go = v.kind === 'yt' ? 'play' : 'open';
+    return `<div class="rv" data-id="${esc(v.id)}"><div class="th" data-a="${go}" role="button" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}${v.kind === 'yt' ? '<span class="pl">▶</span>' : ''}</div>
+      <div style="min-width:0"><b data-a="${go}" role="button">${esc(v.title || v.url)}</b><small>${meta}</small>
+      <div class="acts">${v.kind === 'yt' ? `<button type="button" data-a="play">▶ 보기</button><a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브</a>` : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
       ${mine ? '<button type="button" data-a="memo">📝 메모</button><button type="button" data-a="make">🎬 이걸로 만들기</button><button type="button" class="red" data-a="del">🗑</button>'
         : `<button type="button" data-a="save" class="${saved ? 'on' : ''}">${saved ? '✅ 담았어요' : '📌 담기'}</button>`}</div></div>${memo}</div>`;
   }
   async function act(e, mine) {
-    const b = e.target.closest('button[data-a]'); if (!b) return; const id = b.closest('.rv').dataset.id, a = b.dataset.a;
+    const b = e.target.closest('[data-a]'); if (!b) return; const id = b.closest('.rv').dataset.id, a = b.dataset.a;
     const list = mine ? await all() : RES, v = list.find(x => x.id === id); if (!v) return;
     if (a === 'play') return play(v);
+    if (a === 'open') { window.open(v.url, '_blank', 'noopener'); return; }
     if (a === 'save') { const has = (await all()).find(x => x.id === id); if (has) return toast('이미 담아 둔 영상이에요'); const r = Object.assign({}, v, { at: Date.now(), tags: [], memo: '' }); await put(r); b.textContent = '✅ 담았어요'; b.classList.add('on'); count(); memoSheet(r, true); return; }
     if (a === 'memo') return memoSheet(v, false);
     if (a === 'del') { if (!confirm('내 레퍼런스에서 뺄까요?\n「' + (v.title || v.url) + '」')) return; await del(id); drawMine(); return; }
@@ -161,13 +199,15 @@
 
   /* ── 📌 내 레퍼런스 ── */
   async function count() { const n = (await all()).length; $('mineN').textContent = n ? `(${n})` : ''; }
+  let MPG = 0;
   async function drawMine() {
     const q = $('mFind').value.trim(), list = (await all()).filter(r => !q || ((r.title || '') + ' ' + (r.memo || '') + ' ' + (r.ch || '')).includes(q));
-    $('mine').innerHTML = list.map(r => card(r, true, true)).join('') || `<p class="rmsg">${q ? '찾는 레퍼런스가 없어요' : '아직 담은 영상이 없어요.<br>🔎 찾기에서 📌 담기, 또는 위에 주소를 붙여넣어 주세요.'}</p>`;
+    const n = Math.max(1, Math.ceil(list.length / PER)); if (MPG >= n) MPG = n - 1;
+    $('mine').innerHTML = (list.slice(MPG * PER, MPG * PER + PER).map(r => card(r, true, true)).join('') + pager(n, MPG)) || `<p class="rmsg">${q ? '찾는 레퍼런스가 없어요' : '아직 담은 영상이 없어요.<br>🔎 찾기에서 📌 담기, 또는 위에 주소를 붙여넣어 주세요.'}</p>`;
     count();
   }
-  $('mine').addEventListener('click', e => act(e, true));
-  $('mFind').addEventListener('input', drawMine);
+  $('mine').addEventListener('click', e => { const pg = e.target.closest('[data-pg]'); if (pg) { MPG = +pg.dataset.pg; drawMine(); $('mine').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } act(e, true); });
+  $('mFind').addEventListener('input', () => { MPG = 0; drawMine(); });
   $('paste').addEventListener('click', async () => { try { const t = await navigator.clipboard.readText(); if (t) { $('url').value = t.trim(); return; } } catch (e) { /* 아래 */ } $('url').focus(); toast('칸을 꾹 눌러 「붙여넣기」 해 주세요'); });
   $('addUrl').addEventListener('click', async () => {
     const p = parse($('url').value); if (!p) return alert('유튜브 · 틱톡 · 인스타 주소를 붙여넣어 주세요.');

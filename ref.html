@@ -47,6 +47,12 @@ html,body{overflow-x:hidden}
 .chips2{display:flex;flex-wrap:wrap;gap:6px}.chips2 button{min-height:40px;padding:0 12px;border-radius:999px;border:1.5px solid #ddd6fe;background:#fff;color:#5b21b6;font-weight:800;font-size:.88rem}
 .chips2 button[aria-pressed=true]{background:#5b21b6;border-color:#5b21b6;color:#fff}
 .player{position:relative;width:100%;aspect-ratio:9/16;max-height:62vh;background:#000;border-radius:14px;overflow:hidden}.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.rgo small{display:block;font-size:.7rem;font-weight:700;opacity:.85;line-height:1}
+.qbar{padding:12px 14px}.qt{font-weight:900;font-size:.98rem}.qt small{font-weight:600;color:#64748b;font-size:.75rem}
+.qtrack{height:14px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin:8px 0 6px}.qtrack i{display:block;height:100%;border-radius:999px}
+.qn{font-size:1.05rem}.qs{font-size:.9rem;color:#334155;margin-top:2px}.qs2{font-size:.76rem;color:#64748b;margin-top:4px;line-height:1.45}
+.rv .th{cursor:pointer}.rv .th .pl{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:#000a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem}.rv b[role=button]{cursor:pointer}
+.ppages{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:10px 0 4px}.ppages button{min-width:44px;min-height:44px;border-radius:12px;border:1.5px solid #cbd5e1;background:#fff;color:#5b21b6;font-weight:900;font-size:1rem}.ppages button.on{background:#5b21b6;border-color:#5b21b6;color:#fff}
 .ol{padding-left:20px;margin:6px 0;line-height:1.7}
 </style>
 </head>
@@ -57,6 +63,7 @@ html,body{overflow-x:hidden}
 
   <!-- 🔎 찾기 -->
   <div id="tFind">
+    <div class="rbox qbar" id="qBar"></div>
     <div class="rbox rkey" id="keyBox" hidden>
       <h3>🔑 유튜브 검색 키 넣기 (처음 한 번만)</h3>
       <p class="rhint">키는 <b>이 휴대폰에만</b> 저장돼요. 하루 약 <b>100번</b> 검색까지 무료예요.</p>
@@ -74,13 +81,12 @@ html,body{overflow-x:hidden}
       </details>
     </div>
     <div class="rbox" id="findBox">
-      <div class="rrow"><input class="rin" id="q" type="search" enterkeyhint="search" placeholder="예: 육상 대회 응원 · 보험 꿀팁"><button type="button" class="rgo" id="go">찾기</button></div>
+      <div class="rrow"><input class="rin" id="q" type="search" enterkeyhint="search" placeholder="예: 육상 대회 응원 · 보험 꿀팁"><button type="button" class="rgo" id="go">찾기<small>100점</small></button></div>
       <span class="rlbl">📱 길이</span><div class="seg" id="sLen"><button type="button" data-v="short" aria-pressed="true">쇼츠만</button><button type="button" data-v="any" aria-pressed="false">모두</button></div>
       <span class="rlbl">📅 기간</span><div class="seg" id="sWhen"><button type="button" data-v="7" aria-pressed="false">1주</button><button type="button" data-v="30" aria-pressed="false">1달</button><button type="button" data-v="365" aria-pressed="true">1년</button><button type="button" data-v="0" aria-pressed="false">전체</button></div>
       <span class="rlbl">👀 최소 조회수</span><div class="seg" id="sMin"><button type="button" data-v="0" aria-pressed="false">상관없음</button><button type="button" data-v="100000" aria-pressed="false">10만</button><button type="button" data-v="1000000" aria-pressed="true">100만</button><button type="button" data-v="10000000" aria-pressed="false">1000만</button></div>
       <span class="rlbl">↕ 순서</span><div class="seg" id="sOrd"><button type="button" data-v="viewCount" aria-pressed="true">조회수 많은 순</button><button type="button" data-v="relevance" aria-pressed="false">검색어와 가까운 순</button></div>
       <div class="rother"><a id="toTT" href="#" target="_blank" rel="noopener">🎵 틱톡에서 찾기</a><a id="toIG" href="#" target="_blank" rel="noopener">📸 인스타에서 찾기</a></div>
-      <p class="rhint" id="quota"></p>
       <button type="button" class="ghost" id="keyEdit" style="margin-top:6px;font-size:.8rem">🔑 검색 키 바꾸기</button>
     </div>
     <div class="rres" id="res"></div>
