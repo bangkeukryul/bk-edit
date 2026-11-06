@@ -23,32 +23,63 @@ function commit(noHist) {
 function setP(p) { P = ED.P = p; }
 function undo(d) { const n = hi + d; if (n < 0 || n >= hist.length) return; hi = n; PAIR = null; const keep = P && P.lock && P.lock.on ? { clips: JSON.stringify(P.clips), lock: JSON.stringify(P.lock), rev: P.lock.rev || 0 } : null; setP(JSON.parse(hist[hi])); if (keep && P.lock && P.lock.on && (P.lock.rev || 0) !== keep.rev) { /* 🎬 가사 맞춤처럼 일부러 바꾼 것은 되돌릴 수 있게 */ } else if (keep) { P.clips = mergeTiming(JSON.parse(keep.clips)); P.lock = JSON.parse(keep.lock); P.lock.sig = sigOf(); P.lock.snap = JSON.stringify(P.clips); }   /* 🔒 잠근 동안 되돌리기는 장면 시간 · 순서를 건드리지 않아요 */ if (SEL >= P.clips.length) SEL = P.clips.length - 1; SELOV = null; T = Math.min(T, timeline(P).total); renderAll(); clearTimeout(saveT); saveT = setTimeout(saveProj, 700); toast(d < 0 ? '↩️ 되돌렸어요' : '↪️ 다시 했어요'); }
 function updUndo() { $('undoBtn').disabled = hi <= 0; $('redoBtn').disabled = hi >= hist.length - 1; }
+window.__bkeSave = () => saveProj();
 async function saveProj() { if (!P) return; try { await IDB.put('p', 'cur', { P, at: Date.now() }); } catch (e) { toast('저장 공간이 부족해 「이어서 하기」 저장을 못 했어요'); } }
 
 /* ═════════ 시작 화면 ═════════ */
 function renderStart() {
-  $('pGrid').innerHTML = Object.entries(PURPOSE).map(([k, p]) => `<button type="button" class="pcard" data-p="${k}"${pressed(startPurpose, k)}><span class="pi">${p.ic}</span><b>${esc(p.n)}</b><small>${esc(p.d)}</small></button>`).join('');
+  $('pGrid').innerHTML = Object.entries(PURPOSE).map(([k, p]) => `<button type="button" data-p="${k}"${pressed(startPurpose, k)}><span>${p.ic}</span>${esc(p.n)}</button>`).join('');
   const r = startRatio || PURPOSE[startPurpose].ratio;
   $('rChips').innerHTML = Object.entries(RATIOS).map(([k, v]) => `<button type="button" data-r="${k}"${pressed(r, k)}>${v[2]}${k === PURPOSE[startPurpose].ratio ? ' <em>추천</em>' : ''}</button>`).join('');
 }
 $('pGrid').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; startPurpose = b.dataset.p; startRatio = ''; renderStart(); renderPend(); });
 $('rChips').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; startRatio = b.dataset.r; renderStart(); renderPend(); });
-/* BK에딧: ① 자료를 먼저 모아 두고 → ② 영상 종류 → ✅ 선택 완료에서 편집 시작 */
-let PEND = [];
+/* BK에딧: ➕ 자료 넣기로 모아 두고(사진 · 영상 · 스크랩 · 글 · 웃긴 말 · 노래) → 영상 종류 → ✅ 선택 완료에서 편집 시작 */
+let PEND = [], SKIPASK = false;
+const isMedia = x => x instanceof Blob;
 function renderPend() {
   const box = $('pend'); box.hidden = !PEND.length;
-  box.innerHTML = PEND.map((f, i) => `<div class="pi2" data-i="${i}" style="${f._u && /^image/.test(f.type) ? `background-image:url(${f._u})` : ''}">${/^video/.test(f.type) ? '<i>🎞 영상</i>' : ''}<button type="button" data-x="${i}" aria-label="빼기">✕</button></div>`).join('') + `<span class="cnt">${PEND.length}개 골랐어요</span>`;
-  $('goDone').disabled = !PEND.length;
-  $('goInfo').textContent = PEND.length ? `${PEND.length}개 · ${PURPOSE[startPurpose].n} · ${(startRatio || PURPOSE[startPurpose].ratio)}` : '먼저 ① 사진 · 동영상을 넣어 주세요';
-  document.querySelectorAll('.steps b').forEach((b, i) => b.classList.toggle('on', PEND.length ? i === 1 : i === 0));
+  const nM = PEND.filter(isMedia).length;
+  box.innerHTML = PEND.map((f, i) => isMedia(f)
+    ? `<div class="pi2" style="${f._u && /^image/.test(f.type) ? `background-image:url(${f._u})` : ''}">${/^video/.test(f.type) ? '<i>🎞 영상</i>' : f._scrap ? '<i>📰 스크랩</i>' : f._card ? '<i>🟦 글</i>' : ''}<button type="button" data-x="${i}" aria-label="빼기">✕</button></div>`
+    : f.kind === 'music' ? `<div class="pi2 mu">🎵<i>노래</i><button type="button" data-x="${i}" aria-label="빼기">✕</button></div>`
+    : `<div class="pi2 tx">${f.kind === 'funny' ? '😂 ' : '💬 '}${esc(f.text.split('\n')[0].slice(0, 24))}<i>${f.text.split('\n').filter(Boolean).length}줄 자막</i><button type="button" data-x="${i}" aria-label="빼기">✕</button></div>`).join('') + `<span class="cnt">${PEND.length}개 담았어요</span>`;
+  $('goDone').disabled = !nM;
+  $('goInfo').textContent = nM ? `사진 · 영상 ${nM}개 · ${PURPOSE[startPurpose].n} · ${(startRatio || PURPOSE[startPurpose].ratio)}` : (PEND.length ? '사진 · 영상을 하나 이상 넣어 주세요' : '먼저 ➕ 자료 넣기로 사진 · 영상을 넣어 주세요');
+  document.querySelectorAll('.steps b').forEach((b, i) => b.classList.toggle('on', nM ? i === 1 : i === 0));
 }
 $('pend').addEventListener('click', e => { const b = e.target.closest('[data-x]'); if (!b) return; const f = PEND.splice(+b.dataset.x, 1)[0]; if (f && f._u) URL.revokeObjectURL(f._u); renderPend(); });
-$('fStart').addEventListener('change', e => {
+function pushMedia(fs, mark) { for (const f of fs) { try { f._u = URL.createObjectURL(f); } catch (er) { /* 무시 */ } if (mark) f[mark] = 1; PEND.push(f); } renderPend(); }
+$('fStart').addEventListener('change', e => {   // 보관함 「영상 시작」도 여기로
   const fs = Array.from(e.target.files || []); e.target.value = ''; if (!fs.length) return;
-  for (const f of fs) { try { f._u = URL.createObjectURL(f); } catch (er) { /* 무시 */ } PEND.push(f); }
-  renderPend(); toast(`📥 ${fs.length}개를 담았어요 · 아래 ② 영상 종류를 고르고 ✅ 선택 완료`, 3000);
+  pushMedia(fs); toast(`📥 ${fs.length}개를 담았어요`, 2000);
 });
-$('goDone').addEventListener('click', () => { if (!PEND.length) return; const fs = PEND; PEND = []; renderPend(); beginWith(fs); });
+$('addBig').addEventListener('click', async () => {
+  if (!g.BKKIT) return toast('자료 넣기를 열 수 없어요');
+  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, scrap: 1, text: 1, funny: 1, music: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
+  if (!r) return;
+  if (r.kind === 'files') pushMedia(r.files);
+  else if (r.kind === 'scrap') pushMedia(r.files, '_scrap');
+  else if (r.kind === 'music') { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.files[0] }); renderPend(); }
+  else if (r.kind === 'text' && r.as === 'card') { busy('글 화면 만드는 중…'); const [w, h] = ED.outSize(startRatio || PURPOSE[startPurpose].ratio, 1080); const cards = []; for (const para of r.text.split(/\n\s*\n/)) if (para.trim()) cards.push(await g.BKKIT.textCard(para.trim(), w, h)); busy(''); pushMedia(cards, '_card'); }
+  else { PEND.push({ kind: r.kind, text: r.text }); renderPend(); }
+});
+$('goDone').addEventListener('click', async () => {
+  const media = PEND.filter(isMedia); if (!media.length) return;
+  const extra = PEND.filter(x => !isMedia(x)); PEND = []; renderPend();
+  SKIPASK = true; await beginWith(media); SKIPASK = false;
+  // 📰 스크랩 · 🟦 글 화면은 글씨가 잘리지 않게 「전체 보이기」
+  const real = P.clips.filter(c => c.kind !== 'card');
+  real.forEach((c, i) => { const f = media[i]; if (f && (f._scrap || f._card)) c.fit = 'contain'; });
+  // 💬 자막 · 😂 웃긴 말 → 장면마다 한 줄씩
+  const lines = []; let funny = false;
+  for (const x of extra) if (x.kind === 'text' || x.kind === 'funny') { if (x.kind === 'funny') funny = true; x.text.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l)); }
+  if (lines.length) { real.forEach((c, i) => { if (lines[i]) c.cap = Object.assign({}, c.cap, { t: lines[i] }); }); if (funny) P.capDef.style = 'variety'; if (lines.length > real.length) toast(`💬 자막 ${lines.length}줄 중 ${real.length}줄만 들어갔어요 (장면이 ${real.length}개)`, 4000); }
+  // 🎵 노래
+  const mus = extra.find(x => x.kind === 'music');
+  if (mus) { const f = mus.file, id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name }; busy('음악 여는 중…'); const s2 = await ED.loadSource(meta, f); busy(''); if (s2.buf) { meta.dur = s2.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (er) { /* 공간 */ } P.music.kind = 'file'; P.music.fileId = id; } else toast('음악 파일을 열 수 없어요 (MP3 · M4A 권장)'); }
+  if (lines.length || mus || media.some(f => f._scrap || f._card)) { commit(); renderPanel(); }
+});
 async function beginWith(fs) {
   try { await IDB.clear('f'); await IDB.clear('p'); } catch (err) { /* 무시 */ }
   SRC.clear(); ED.endRaw.clear(); ED.thumbs.clear();
@@ -92,7 +123,7 @@ async function resume(p) {
 
 /* ═════════ 자료 넣기 ═════════ */
 async function addFiles(fs, pos) {
-  try { if (g.BKLIB) g.BKLIB.addMany(fs); } catch (e) { /* 보관함 담기 실패는 무시 */ }   // 📥 내 사진 보관함에도 담기
+  if (!SKIPASK) { try { if (g.BKKIT) await g.BKKIT.askSave(fs); } catch (e) { /* 보관함 담기 실패는 무시 */ } }   // 📥 보관함에도 담을까요?
   const pp = PURPOSE[P.purpose], add = [];
   if (pos == null) { pos = P.clips.length; if (P.clips.length && P.clips[P.clips.length - 1].kind === 'card' && P.clips[P.clips.length - 1].card !== 'title') pos--; }
   let n = 0;
@@ -1899,3 +1930,6 @@ renderStart(); checkResume(); renderPend();
 window.addEventListener('beforeunload', () => { if (P) saveProj(); });
 g.__ed = { get P() { return P; }, aiApply: t => aiApply(t), aiPrompt: () => aiPrompt(false), select, play, pause, get T() { return T; }, set T(v) { T = v; drawNow(); }, setMode: (m) => { aiMode = m; } };
 })(window);
+
+/* BK에딧: 맨 위 ← — 편집 중이면 저장하고 첫 화면(자료 넣기 · 이어서 하기)으로, 첫 화면이면 BK에딧으로 */
+(function () { const b = document.querySelector('.bke-back'); if (!b) return; b.addEventListener('click', async e => { if (!document.body.classList.contains('editing')) return; e.preventDefault(); try { await (window.__bkeSave && window.__bkeSave()); } catch (er) { /* 무시 */ } location.href = location.pathname; }); })();

@@ -431,6 +431,8 @@ window.addEventListener('resize', () => { if (P && !$('editor').hidden) renderTL
 
 /* ═════════ 넣기 ═════════ */
 $('addFile').addEventListener('change', async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addFiles(fs); });
+/** ➕ 넣기: 갤러리 · 내 파일 · 내 보관함 중에서 고르기 (고른 뒤 「보관함에도 담을까요?」) */
+async function openAdd() { if (PLAY) pause(); const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1 }); if (r && r.files && r.files.length) await addFiles(r.files); }
 async function addFiles(fs) {
   if (PLAY) pause();
   snap();
@@ -592,7 +594,7 @@ function openDub() {
   renderDub(); T = DUB.s; seekPreview();
 }
 function closeDub() {
-  if (!DUB) return; if (REC) stopRec(false); if (PLAY) pause();
+  if (!DUB) return; if (REC) stopRec(false); if (PLAY) pause(); if (g.BKKIT) g.BKKIT.stop();
   $('editorStage').appendChild($('pv')); $('dub').hidden = true; DUB = null; changed();
 }
 function renderDub() {
@@ -681,8 +683,9 @@ $('dub').addEventListener('click', e => {
   if (x === 'listen') { if (PLAY) { pause(); return; } T = D.s; play(); }
   if (x === 'again') { if (PLAY) pause(); undo(); D.take = null; renderDub(); setTimeout(startRec, 200); }
   if (x === 'ok') { D.take = null; history.back(); }
-  if (x === 'script') { const t = $('dubTxtBox'); t.hidden = !t.hidden; }
+  if (x === 'script') { const t = $('dubTxtBox'); t.hidden = !t.hidden; if (!t.hidden) t.closest('details').open = true; }
 });
+if (g.BKKIT) g.BKKIT.dictate($('dubTxt'), $('dubMic'), $('dubLive'));
 $('dubTxt').addEventListener('input', e => { P.script = e.target.value; clearTimeout(saveT); saveT = setTimeout(saveNow, 900); const lines = String(P.script).split('\n').map(l => l.trim()).filter(Boolean); $('dubScript').innerHTML = lines.map((l, i) => `<div class="dl" data-i="${i}">${esc(l)}</div>`).join(''); });
 
 /* ═════════ ✨ 효과 (글자 · 스티커 · 화면 효과 · 색감 · 전환 · 효과음 · 가리기) ═════════ */
@@ -824,11 +827,13 @@ function moreSheet() {
       <button type="button" class="big sec" data-x="dup">📄 한 번 더 넣기 (복사)</button>` : '<div class="note">💡 아래 줄에서 🎞 장면을 고르면 속도 · 화면 맞춤 · 순서를 바꿀 수 있어요.</div>'}
     <h4>📱 화면 모양</h4>${chips('ratio', Object.keys(RATIOS).map(k => [k, RATIOS[k][2]]), P.ratio)}
     <h4>📷 사진 기본 길이 <small class="muted">(다음에 넣는 사진부터)</small></h4>${chips('pd', [[2, '2초'], [3, '3초'], [4, '4초'], [5, '5초']], P.photoDur)}
+    <h4>📥 고른 사진 · 영상을 보관함에도 담기</h4>${chips('psave', [['ask', '매번 묻기'], ['always', '항상 담기'], ['never', '담지 않기']], (() => { try { return localStorage.getItem('bkPickSave') || 'ask'; } catch (e) { return 'ask'; } })())}
     <h4>✏️ 프로젝트 이름</h4><input type="text" id="pnm" value="${esc(P.name)}">
     <button type="button" class="big sec" data-x="bk">💾 백업 파일(.bkedit)로 저장 · ☁️ 구글 드라이브</button>
     <button type="button" class="big sec" data-x="home">📂 내 프로젝트로 나가기</button>`, () => { const v = ($('pnm') && $('pnm').value.trim()) || P.name; if (v !== P.name) { P.name = v.slice(0, 40); updBtns(); saveNow(); } });
   let snapped = false; const once = () => { if (!snapped) { snap(); snapped = true; } };
   onChips(b, (k, v) => {
+    if (k === 'psave') { try { localStorage.setItem('bkPickSave', v); } catch (e) { /* 무시 */ } toast(v === 'ask' ? '매번 물어볼게요' : v === 'always' ? '항상 보관함에 담아요' : '보관함에 담지 않아요', 1400); return; }
     once();
     if (k === 'ratio') { P.ratio = v; fitCanvas(); }
     else if (k === 'pd') P.photoDur = Number(v);
@@ -849,7 +854,7 @@ $('tools').addEventListener('click', e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   if (PLAY) pause();
   const a = b.dataset.a;
-  if (a === 'add') $('addFile').click();
+  if (a === 'add') openAdd();
   if (a === 'split') split();
   if (a === 'trim') trimSheet();
   if (a === 'del') del();
@@ -1037,7 +1042,7 @@ async function openProject(rec) {
   }
   fitCanvas(); updBtns(); renderTL(); seekPreview();
   OPEN_SNAP = JSON.stringify(P);
-  if (!rec) { await saveNow(); setTimeout(() => $('addFile').click(), 300); }
+  if (!rec) { await saveNow(); setTimeout(openAdd, 300); }
 }
 /* ◁ 뒤로 가기 · ← : 고친 것이 있으면 저장할지 물어보기 */
 let OPEN_SNAP = '', NEWP = false, IGNOREPOP = 0;

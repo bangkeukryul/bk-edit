@@ -23,14 +23,39 @@
 .godone{position:sticky;bottom:10px;z-index:30;display:block;width:100%;margin:16px 0 8px;padding:14px 12px;min-height:64px;border:0;border-radius:18px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.15rem;box-shadow:0 8px 20px #0d948855}
 .godone small{display:block;font-weight:700;font-size:.85rem;opacity:.92;margin-top:2px}.godone:disabled{opacity:.45;box-shadow:none}
 .bke-go{display:block;width:100%;margin-top:10px;padding:14px;border:0;border-radius:14px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.05rem}
+.bke-top{position:sticky;top:0;z-index:30;background:#111318;color:#fff;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top))}
+.bke-top .brand{flex:1;display:flex;align-items:center;gap:8px;min-width:0}.bke-top h1{color:#fff;font-size:1.2rem;margin:0;white-space:nowrap}.bke-top .adm{background:#134e4a;color:#99f6e4}
+.bke-back{min-width:48px;min-height:48px;display:flex!important;align-items:center;justify-content:center;font-size:1.4rem!important;font-weight:900;background:#1c2029!important;color:#fff!important;border:0!important;border-radius:14px!important}
+.bke-sp{width:48px}.bkqr-pill{display:none!important}
+#start{padding:12px 14px 20px;font-size:17px}#start h2.bke-h{font-size:1.25rem;margin:14px 0 8px;color:#111827}
+.pchips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.pchips::-webkit-scrollbar{display:none}
+.pchips button{flex:none;display:flex;align-items:center;gap:6px;min-height:50px;padding:6px 14px;border-radius:999px;border:1.5px solid #dbe3ef;background:#fff;font-weight:900;font-size:1rem;color:#174782}
+.pchips button[aria-pressed=true]{background:#0d9488;color:#fff;border-color:#0d9488}
+.rrow{display:flex;align-items:center;gap:8px;margin-top:10px}.rrow>span{font-weight:900;color:#334155;white-space:nowrap}.rrow .chips{flex-wrap:nowrap;overflow-x:auto}
+.rrow .chips button{white-space:nowrap;min-height:44px}
+.addbig{display:block;width:100%;margin:16px 0 6px;min-height:92px;border:0;border-radius:22px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.45rem;box-shadow:0 10px 24px #0d948844}
+.addbig small{display:block;font-size:.9rem;font-weight:700;opacity:.92;margin-top:2px}
+.pend .pi2.tx{background:#1e3a8a;display:flex;align-items:center;justify-content:center;padding:4px;font-size:.66rem;line-height:1.25;text-align:center;overflow:hidden}
+.pend .pi2.mu{background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.bke-how{margin-top:14px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:6px 12px}.bke-how summary{font-weight:900;padding:6px 0}
+
+body.editing{background:#111318}body.editing .stage{background:#111318;box-shadow:none}
+body.editing .screen{height:clamp(180px,31dvh,460px)}
+body.editing .transport{background:#f3f6fb;border-radius:14px;padding:4px 8px}
+body.editing .modes{background:#1c2029}body.editing .modes button{color:#cbd5e1;font-size:.95rem;padding:9px 2px}body.editing .modes button[aria-pressed=true]{background:#0d9488!important;color:#fff!important}
+body.editing .tlw,body.editing .panel{background:#f3f6fb}body.editing .panel{max-width:none;font-size:16px}
+body.editing .tabs{padding:6px 6px calc(8px + env(safe-area-inset-bottom))}body.editing .tabs button{font-size:.86rem;font-weight:800;min-height:62px;color:#1f2937}
+body.editing .tabs button span{font-size:1.5rem}body.editing .tabs button[aria-pressed=true]{color:#0f766e;background:#ccfbf1}
+body.editing .fine button,body.editing .qbar button{min-height:44px}
 </style>
 </head>
 <body>
 <script>window.BK_PROG="shorts";</script><script src="../license.js"></script>
 <div class="app">
-  <header class="top">
-    <div class="brand"><h1>🎵 쇼츠 만들기</h1><em class="adm">1차 편집 · BK에딧</em></div>
-    <div class="top-act"><a class="bk-home" href="../">← BK에딧</a></div>
+  <header class="top bke-top">
+    <a class="bk-home bke-back" href="../" aria-label="BK에딧으로">←</a>
+    <div class="brand"><h1>🎵 쇼츠 만들기</h1><em class="adm">1차 편집</em></div>
+    <span class="bke-sp"></span>
   </header>
 
   <!-- ── 시작 화면 ── -->
@@ -40,24 +65,20 @@
       <div class="two"><button type="button" id="resumeBtn" class="pri">▶ 이어서 하기</button><button type="button" id="resumeDel" class="sec">지우기</button></div>
     </div>
     <div class="steps"><b class="on">① 자료 넣기</b><span>→</span><b>② 어떤 영상</b><span>→</span><b>③ 편집하기</b></div>
-    <h2>① 사진 · 동영상 넣기</h2>
+    <h2 class="bke-h">어떤 영상을 만들까요?</h2>
+    <div class="pchips" id="pGrid"></div>
+    <div class="rrow"><span>화면</span><div class="chips" id="rChips"></div></div>
+    <button type="button" class="addbig" id="addBig">➕ 자료 넣기<small>사진 · 영상 · 스크랩 · 글 · 웃긴 말 · 노래</small></button>
     <div class="pend" id="pend" hidden></div>
-    <label class="bigpick"><input type="file" id="fStart" accept="image/*,video/*" multiple hidden><span>📷 사진 · 🎞 동영상 고르기</span><small>여러 개를 한꺼번에 골라요 · 나중에 더 넣을 수 있어요</small></label>
-    <label class="bigpick" style="margin-top:10px;background:#fff;color:#6d28d9;border:2px solid #c4b5fd;box-shadow:none;padding:16px 12px"><input type="file" id="fStart2" multiple hidden><span style="font-size:1.1rem">📁 내 파일 · 다운로드에서 고르기</span><small style="color:#7c6aa8">다운받은 사진은 여기서 · 「파일」 → 첫 사진을 <b>꾹(길게)</b> 누르면 여러 장 선택 → 오른쪽 위 「선택」</small></label>
-    <button type="button" class="bigpick" id="libStart" style="margin-top:10px;width:100%;background:#fffbeb;color:#92400e;border:2px solid #fcd34d;box-shadow:none;padding:16px 12px;cursor:pointer"><span style="font-size:1.1rem">📥 내 사진 보관함에서 고르기</span><small style="color:#a16207">BK쇼츠 사진 탭 · ✂️ 편집 탭에서 고른 사진이 담겨 있어요</small></button>
-    <h2>② 무슨 영상을 만들까요?</h2>
-    <div class="pgrid" id="pGrid"></div>
-    <h4 class="sub2">화면 모양</h4>
-    <div class="chips" id="rChips"></div>
-    <button type="button" class="godone" id="goDone" disabled>✅ 선택 완료 → 편집하기<small id="goInfo">먼저 ① 사진 · 동영상을 넣어 주세요</small></button>
+    <div hidden><input type="file" id="fStart" accept="image/*,video/*" multiple><input type="file" id="fStart2" multiple><button type="button" id="libStart"></button></div>
+    <button type="button" class="godone" id="goDone" disabled>✅ 선택 완료 → 편집하기<small id="goInfo">먼저 ➕ 자료 넣기로 사진 · 영상을 넣어 주세요</small></button>
+    <details class="bke-how"><summary>💡 쇼츠 만들기로 할 수 있는 것</summary>
     <ul class="howto">
       <li>✂️ <b>자르기 · 나누기 · 순서 · 속도</b> — 필요한 부분만 남겨요</li>
-      <li>💬 <b>자막 13가지</b> (예능 · 말풍선 · 뉴스 띠 · 손글씨 · 추억 명조 …) · 😀 스티커 · 가격표 · 할인 배지</li>
-      <li>✨ 효과 (줌인 · 흔들림 · 하트 · 꽃가루 · 옛날 필름) · 🔔 효과음 12가지 · 🎵 음악 · 🎤 내 목소리</li>
-      <li>🤖 <b>AI가 장면을 보고</b> 어디를 몇 초 쓸지 · 자막 · 멘트를 정해 줘요</li>
-      <li>🏪 가게 정보 → 엔딩에 주소 · 전화 · QR · 📝 블로그용 대표 이미지 · 자막 파일 · 글 요청서</li>
-      <li>💾 세로 · 가로 · 정사각 MP4로 한 번에 만들기 — 사진 · 영상은 휴대폰 밖으로 나가지 않아요</li>
-    </ul>
+      <li>🎤 <b>노래 가사 자막</b> · 📷 가사에 맞춰 사진 고르기 · 🔒 잠금</li>
+      <li>💬 <b>자막 13가지</b> · 😀 스티커 · ✨ 효과 · 🔔 효과음 · 🎵 음악 · 🎤 내 목소리</li>
+      <li>✂️ 다 만들면 <b>「최종 편집하러 가기」</b> → 효과 · 글자 · 더빙은 큰 화면에서</li>
+    </ul></details>
   </section>
 
   <!-- ── 편집 화면 ── -->
@@ -90,6 +111,7 @@
 <script src="lib.js"></script>
 <script src="ed-core.js"></script>
 <script src="ed-render.js"></script>
+<script src="../bkkit.js"></script>
 <script src="ed-ui.js"></script>
 <script src="../handoff.js"></script>
 <script>document.getElementById('edVer').textContent='2026.11.02';</script>

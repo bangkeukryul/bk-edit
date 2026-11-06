@@ -16,19 +16,61 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="style.css">
-<style>.bke-tag{font-style:normal;font-size:.72rem;background:#ccfbf1;color:#0f766e;border-radius:999px;padding:2px 8px;font-weight:800;margin-left:6px;white-space:nowrap}.bke-go{display:block;width:100%;margin-top:10px;background:linear-gradient(135deg,#14b8a6,#0e7490)!important;color:#fff!important;border:0!important;font-weight:900;min-height:54px;border-radius:14px}</style>
+<style>.bke-tag{font-style:normal;font-size:.72rem;background:#ccfbf1;color:#0f766e;border-radius:999px;padding:2px 8px;font-weight:800;margin-left:6px;white-space:nowrap}.bke-go{display:block;width:100%;margin-top:10px;background:linear-gradient(135deg,#14b8a6,#0e7490)!important;color:#fff!important;border:0!important;font-weight:900;min-height:54px;border-radius:14px}body.bke-pre .stage,body.bke-pre .panels,body.bke-pre .tabbar{display:none!important}body:not(.bke-pre) .bke-start{display:none}
+.bke-top{position:sticky;top:0;z-index:30;display:flex!important;align-items:center;gap:8px;background:#111318;color:#fff;padding:8px 10px!important;padding-top:calc(8px + env(safe-area-inset-top))!important;margin:0!important}
+.bke-top .brand{flex:1;display:flex;align-items:center;gap:8px;min-width:0}.bke-top h1{color:#fff!important;font-size:1.2rem!important;margin:0;white-space:nowrap}.bke-top .bke-tag{background:#134e4a;color:#99f6e4}
+.bke-back{min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;background:#1c2029;color:#fff;border-radius:14px;text-decoration:none}
+.bke-menu{position:relative}.bke-menu summary{list-style:none;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;background:#1c2029;border-radius:14px;cursor:pointer}.bke-menu summary::-webkit-details-marker{display:none}
+.bke-menu>div{position:absolute;right:0;top:54px;background:#fff;border-radius:14px;box-shadow:0 10px 30px #0004;min-width:220px;padding:6px;z-index:40}.bke-menu>div a,.bke-menu>div button{display:block;width:100%;text-align:left;padding:12px;border:0;background:none;color:#111827;font-weight:800;font-size:1rem;text-decoration:none;border-radius:10px}
+.bkqr-pill{display:none!important}
+.bke-start{padding:12px 14px 30px;font-size:17px;max-width:620px;margin:0 auto}.bke-start h2{font-size:1.25rem;margin:16px 0 8px}.bke-start h2.sm{font-size:1.05rem}
+.bke-steps{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem}.bke-steps b{padding:5px 10px;border-radius:999px;background:#e0f2fe;color:#0e7490}.bke-steps b.on{background:#0d9488;color:#fff}.bke-steps span{color:#94a3b8}
+.bke-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.bke-chips::-webkit-scrollbar{display:none}
+.bke-chips button{flex:none;min-height:50px;padding:6px 14px;border-radius:999px;border:1.5px solid #dbe3ef;background:#fff;font-weight:900;font-size:1rem;color:#174782;white-space:nowrap}.bke-chips button[aria-pressed=true]{background:#0d9488;color:#fff;border-color:#0d9488}
+.bke-add{display:block;width:100%;margin:18px 0 6px;min-height:92px;border:0;border-radius:22px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.45rem;box-shadow:0 10px 24px #0d948844}.bke-add small{display:block;font-size:.88rem;font-weight:700;opacity:.92}
+.bke-pend{display:flex;gap:6px;overflow-x:auto;padding:8px;margin:8px 0;background:#fff;border:2px solid #99f6e4;border-radius:16px}
+.bke-pend .it{position:relative;flex:none;width:72px;height:72px;border-radius:10px;background:#0f172a center/cover no-repeat;color:#fff;font-size:.66rem;display:flex;align-items:flex-end;padding:3px;overflow:hidden;line-height:1.2}
+.bke-pend .it.tx{background:#1e3a8a;align-items:center;text-align:center}.bke-pend .it.mu{background:#7c3aed;font-size:1.6rem;justify-content:center;align-items:center}
+.bke-pend .it button{position:absolute;right:-2px;top:-2px;width:26px;height:26px;border-radius:50%;border:0;background:#dc2626;color:#fff;font-weight:900;padding:0}
+.bke-pend .cnt{flex:none;align-self:center;font-weight:900;color:#0f766e;padding:0 8px;white-space:nowrap}
+.bke-done{position:sticky;bottom:10px;display:block;width:100%;margin:14px 0 8px;min-height:64px;border:0;border-radius:18px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.15rem;box-shadow:0 8px 20px #0d948855}.bke-done small{display:block;font-size:.85rem;font-weight:700;opacity:.92}.bke-done:disabled{opacity:.45;box-shadow:none}
+.bke-add small,.bke-done small{color:#ecfeff!important;opacity:1!important}
+.bke-skip{display:block;width:100%;min-height:50px;border:0;border-radius:14px;background:#e8eef8;color:#174782;font-weight:800;font-size:.95rem}
+/* 편집 화면: 미리보기 작게 · 글씨 · 버튼 크게 (BK에딧 편집하기처럼) */
+body:not(.bke-pre){font-size:16.5px}
+body:not(.bke-pre) .stage{background:#111318;padding:6px 10px 8px!important}
+body:not(.bke-pre) .screen{height:clamp(170px,30dvh,440px)!important;width:auto!important;max-width:100%}
+body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 8px}
+.panel-head h2{font-size:1.5rem!important}.panel-head p,.hint{font-size:.95rem!important}
+.seg{flex-wrap:wrap}.seg button{flex:1 0 auto;white-space:nowrap;min-height:46px;font-size:.98rem!important}
+.chips button{min-height:46px;font-size:.98rem}
+.group h3{font-size:1.15rem}
+.tabbar button{min-height:62px;font-size:.9rem!important;font-weight:800}.tabbar svg{width:26px!important;height:26px!important}.tabbar button[aria-current=page]{color:#0f766e!important;background:#ccfbf1;border-radius:12px}
+</style>
 </head>
 <body>
+<script>document.body.classList.add('bke-pre')</script>
   <script>window.BK_PROG="studio";</script><script src="../license.js"></script>
 <div class="app">
-  <header class="top">
-    <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11z"/></svg>
-      <h1>🎬 영상 만들기</h1><em class="bke-tag">1차 편집 · BK에딧</em>
-    </div>
-    <div class="top-act"><a class="button ghost small bk-home" href="../">← BK에딧</a><a class="button ghost small" href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a>
-    <button id="installBtn" class="ghost small" hidden>앱 설치</button></div>
+  <header class="top bke-top">
+    <a class="bke-back" href="../" aria-label="BK에딧으로">←</a>
+    <div class="brand"><h1>🎬 영상 만들기</h1><em class="bke-tag">1차 편집</em></div>
+    <details class="bke-menu"><summary aria-label="메뉴">⋮</summary><div><a href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a><button type="button" id="bkeToStart">➕ 자료 넣기 화면으로</button></div></details>
+    <button id="installBtn" class="ghost small" hidden>앱 설치</button>
   </header>
+
+  <!-- 첫 화면: 미리보기 없이 · 어떤 영상 + ➕ 자료 넣기 + ✅ 선택 완료 -->
+  <section class="bke-start" id="bkeStart">
+    <div class="bke-steps"><b class="on">① 자료 넣기</b><span>→</span><b>② 대본 · 목소리</b><span>→</span><b>③ 장면 · 만들기</b></div>
+    <h2>어떤 영상을 만들까요?</h2>
+    <div class="bke-chips" id="bkeTopics"></div>
+    <h2 class="sm">분량</h2>
+    <div class="bke-chips" id="bkeLen"></div>
+    <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 📰 스크랩 · ✍️ 기사 · 글 · 🎵 노래</small></button>
+    <div class="bke-pend" id="bkePend" hidden></div>
+    <button type="button" class="bke-done" id="bkeDone" disabled>✅ 선택 완료 → 편집하기<small id="bkeInfo">➕ 자료 넣기로 사진 · 기사 · 글을 넣어 주세요</small></button>
+    <button type="button" class="bke-skip" id="bkeSkip">▶ 자료 없이 바로 편집 화면으로 (이어서 하기)</button>
+  </section>
 
   <section class="stage" aria-label="미리보기">
     <div class="screen">
@@ -278,7 +320,10 @@
 <script src="studio.js"></script>
 <script src="talk.js"></script>
 <script src="pair.js"></script>
+<script src="../shorts/lib.js"></script>
+<script src="../bkkit.js"></script>
 <script src="../handoff.js"></script>
+<script src="bke.js"></script>
 <script>document.getElementById('toEditBtn').addEventListener('click',function(){var v=document.getElementById('resultVideo');if(!v||!v.src){alert('먼저 「영상 만들기」로 영상을 만들어 주세요');return}fetch(v.src).then(function(r){return r.blob()}).then(function(b){return BKHAND.send(b,{key:'video',name:'영상 만들기 '+new Date().toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}),from:'🎬 영상 만들기'})}).catch(function(e){alert('넘기지 못했어요: '+(e&&e.message||e))})});</script>
 <script src="qr.js" defer></script>
 </body>
