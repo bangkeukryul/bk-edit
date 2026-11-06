@@ -20,7 +20,7 @@
     preset: 'news', align: 'center', anim: 'none', lineSp: 1.35, boxColor: '#000000', boxOp: 0.55,
     showCh: true, showSrc: true, topFont: 'same', topSize: 62, topY: 9, botFont: 'same', botSize: 34, botY: 96,
     motion: 'random', strength: 0.1, trans: 'soft', fit: 'auto', filter: 'none', vignette: 0.2,
-    volume: 1, bgmStart: 0, fadeOut: 2, talkBgm: 0.15, res: '1080', fps: '30', hq: false,
+    volume: 1, bgmStart: 0, fadeOut: 2, talkBgm: 0.15, sound: 'mine', flowVol: 0.25, res: '1080', fps: '30', hq: false,
   }, PRESETS.news.v);
   const KEY = 'bk-edit-video.v1';
   function loadSettings() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
@@ -197,9 +197,22 @@
   const TRANS = { soft: ['crossfade', 0.6], fast: ['zoom', 0.4], fun: ['random', 0.7], none: ['crossfade', 0] };
   function buildProject() {
     if (!S.photos.length) return null;
-    const st = S.set, N = S.narr && S.narr.on && S.narr.buffer ? S.narr : null;
+    const st = S.set, mode = st.sound || 'mine', N = mode !== 'flow' && S.narr && S.narr.on && S.narr.buffer ? S.narr : null;
     let scenes, total, subs = [], audio = null;
-    if (N) {
+    const G = S.groupsFn ? S.groupsFn() : [], mapG = S.talkMap || [];
+    if (mode === 'flow' && G.length) {        // 🎬 Flow 소리 그대로: 장면마다 만든 클립 길이대로 · 클립 속 소리 · 대사 자막
+      scenes = []; total = 0; const clips = [];
+      G.forEach(g => {
+        const i = S.photos.findIndex(p => p.id === mapG[g.idx[0]]), it = i >= 0 ? S.photos[i] : null;
+        const img = i >= 0 ? i : (S.photos.length ? scenes.length % S.photos.length : 0), dur = it && it.kind === 'video' ? it.dur : Math.max(2, g.dur);
+        scenes.push({ img, start: total, end: total + dur, text: '', clipStart: 0 });
+        const tl = g.lines.reduce((a, l) => a + l.length, 0) || 1; let t = total;
+        g.lines.forEach(l => { const d = dur * l.length / tl; subs.push({ start: t, end: t + d - 0.05, text: l, anim: null }); t += d; });
+        if (it && it.kind === 'video' && it.abuf) clips.push({ buffer: it.abuf, at: total, offset: 0, dur });
+        total += dur;
+      });
+      audio = { buffer: S.audio && st.volume > 0 ? S.audio.buffer : null, start: st.bgmStart, volume: st.volume * 0.35, fadeIn: 0.5, fadeOut: st.fadeOut, clips, duck: [], clipVolume: 1 };
+    } else if (N) {
       const lead = N.lead == null ? 0.35 : N.lead, tail = 1.2, segs = N.segs.filter(g => g.e > g.s), n = Math.max(1, segs.length);
       total = lead + N.duration + tail;
       const bounds = [0]; for (let k = 1; k < n; k++) bounds.push(lead + (segs[k - 1].e + segs[k].s) / 2); bounds.push(total);
@@ -218,6 +231,7 @@
       subs = segs.filter(g => (g.t || '').trim()).map(g => ({ start: lead + g.s, end: Math.min(total - 0.2, lead + g.e + 0.12), text: g.t, anim: null }));
       const vol = st.volume * st.talkBgm;
       audio = { buffer: S.audio && vol > 0 ? S.audio.buffer : null, start: st.bgmStart, volume: vol, fadeIn: 0.5, fadeOut: st.fadeOut, clips: [{ buffer: N.buffer, at: lead, offset: 0, dur: N.duration }], duck: [], clipVolume: N.gain || 1 };
+      if (mode === 'mix') scenes.forEach(sc => { const it = S.photos[sc.img]; if (it && it.kind === 'video' && it.abuf) audio.clips.push({ buffer: it.abuf, at: sc.start, offset: 0, dur: sc.end - sc.start, vol: st.flowVol == null ? 0.25 : st.flowVol }); });   // 🔀 섞기: 클립 소리는 작게
     } else {                                   // 목소리 전: 장면만 3초씩 미리보기
       const per = 3; total = S.photos.length * per;
       scenes = S.photos.map((p, i) => ({ img: i, start: i * per, end: (i + 1) * per, text: '', clipStart: 0 }));

@@ -43,10 +43,11 @@
   }
   $('bkeShareAI').addEventListener('click', async () => {
     const t = TK(); if (!t) return; const req = t.buildReq(), imgs = SENT.filter(f => /^image/.test(f.type)).slice(0, 10);
-    const files = imgs.map((f, i) => new File([f], f.name || `자료${i + 1}.jpg`, { type: f.type || 'image/jpeg' }));
+    const files = imgs.map((f, i) => new File([f], f.name || `자료${i + 1}.jpg`, { type: f.type || 'image/jpeg' })).concat(window.__bkeRefFiles ? window.__bkeRefFiles() : []);
     try { await navigator.clipboard.writeText(req); } catch (e) { /* 무시 */ }
     try {
       if (files.length && navigator.canShare && navigator.canShare({ files, text: req })) { await navigator.share({ files, text: req }); return; }
+      if (files.length > 1 && navigator.canShare) { const f2 = files.filter(f => !/^video/.test(f.type)); if (f2.length && navigator.canShare({ files: f2, text: req })) { await navigator.share({ files: f2, text: req }); alert('⚠️ 참고 영상은 커서 함께 못 보냈어요 (모아보기 그림은 보냈어요). AI 앱에서 📎로 영상을 따로 첨부해 주세요.'); return; } }
       if (navigator.share) { await navigator.share({ text: req }); return; }
     } catch (e) { if (e && e.name === 'AbortError') return; }
     const b = $('tkReqBtn'); if (b) b.click(); alert('📋 요청서를 복사했어요. AI 앱에 붙여넣고, 사진은 📎로 첨부해 주세요.');
@@ -96,6 +97,37 @@
     ta.insertAdjacentElement('afterend', live); ta.insertAdjacentElement('afterend', w);
     window.BKKIT.dictate(ta, w.firstChild, live);
   });
+  /* 🎞 참고 영상 (선택): 영상 + 모아보기 그림(장면 6장) · 링크 · 따라 할 점 → 요청서와 공유에 함께 */
+  const REF = { files: [], sheet: null };
+  const WHAT = { hook: '첫 3초 후킹 방식', tone: '말투 · 말하는 리듬', pace: '장면이 바뀌는 빠르기', cap: '자막 모양 · 위치', flow: '구성 순서(흐름)' };
+  async function contact(f) {   // 참고 영상에서 장면 6장을 뽑아 한 장의 모아보기 그림으로 (ChatGPT처럼 영상을 못 보는 AI용)
+    return new Promise(res => {
+      const v = document.createElement('video'), u = URL.createObjectURL(f); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
+      const fin = r => { URL.revokeObjectURL(u); res(r); }; setTimeout(() => fin(null), 15000);
+      v.onloadedmetadata = async () => {
+        const n = 6, w = 300, h = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9)), c = document.createElement('canvas'); c.width = w * 3; c.height = h * 2; const x = c.getContext('2d');
+        for (let i = 0; i < n; i++) { await new Promise(r => { v.onseeked = r; v.currentTime = Math.min(v.duration - 0.1, (i + 0.5) * v.duration / n); setTimeout(r, 2000); }); x.drawImage(v, (i % 3) * w, Math.floor(i / 3) * h, w, h); x.fillStyle = '#fde047'; x.font = '900 28px sans-serif'; x.fillText(String(i + 1), (i % 3) * w + 10, Math.floor(i / 3) * h + 36); }
+        c.toBlob(b => fin(b ? new File([b], '참고영상_모아보기.jpg', { type: 'image/jpeg' }) : null), 'image/jpeg', .85);
+      };
+      v.onerror = () => fin(null);
+    });
+  }
+  function showRef() { const box = $('bkeRefFiles'); if (!box) return; box.innerHTML = REF.files.map(f => `<div class="vd" style="width:96px;height:96px;border-radius:10px;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem">🎞 ${esc((f.name || '').slice(0, 10))}</div>`).join('') + (REF.sheet ? `<img src="${URL.createObjectURL(REF.sheet)}" alt="">` : ''); }
+  if ($('bkeRefAdd')) $('bkeRefAdd').addEventListener('click', async () => {
+    if (!window.BKKIT) return; const r = await window.BKKIT.open({ gallery: 1, files: 1, lib: 1 }); if (!r || !r.files) return;
+    const vs = r.files.filter(f => /^video/.test(f.type) || /\.(mp4|mov|m4v|webm)$/i.test(f.name || '')).slice(0, 1); if (!vs.length) return alert('참고 영상(동영상 파일)을 골라 주세요');
+    if (vs[0].size > 60 * 1048576) alert('⚠️ 영상이 커서(60MB 넘음) 공유가 안 될 수 있어요. 1분 안팎 영상을 권해요.');
+    REF.files = vs; REF.sheet = await contact(vs[0]); showRef(); window.BKKIT && document.getElementById('bkeRef') && (document.getElementById('bkeRef').open = true);
+  });
+  if ($('bkeRefClear')) $('bkeRefClear').addEventListener('click', () => { REF.files = []; REF.sheet = null; showRef(); });
+  if ($('bkeRefWhat')) $('bkeRefWhat').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
+  window.__bkeRef = () => {
+    const link = ($('bkeRefLink') && $('bkeRefLink').value.trim()) || '';
+    if (!REF.files.length && !link) return '';
+    const what = [...document.querySelectorAll('#bkeRefWhat button[aria-pressed=true]')].map(b => WHAT[b.dataset.v]).filter(Boolean);
+    return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 봐 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 형식 · 흐름만 비슷하게 하고, 문장 · 장면 · 내용은 내 자료로 새로 만들어 줘 (그대로 베끼지 말 것).`;
+  };
+  window.__bkeRefFiles = () => REF.files.concat(REF.sheet ? [REF.sheet] : []);
   showFiles(); setTimeout(sync, 300); sync(); render();
   $('bkeTopicBtn').addEventListener('click', () => setTimeout(render, 50)); document.addEventListener('click', e => { if (e.target.closest('.bkk-dim')) setTimeout(render, 80); });
 })();

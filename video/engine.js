@@ -1512,7 +1512,7 @@
       if (dur <= 0.05) continue;
       const s = oc.createBufferSource();
       s.buffer = c.buffer;
-      const g2 = oc.createGain(), f = Math.min(0.08, dur / 4), v = a.clipVolume == null ? 1 : a.clipVolume;
+      const g2 = oc.createGain(), f = Math.min(0.08, dur / 4), v = c.vol != null ? c.vol : (a.clipVolume == null ? 1 : a.clipVolume);
       g2.gain.setValueAtTime(0, c.at);
       g2.gain.linearRampToValueAtTime(v, c.at + f);
       g2.gain.setValueAtTime(v, c.at + dur - f);
