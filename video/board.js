@@ -82,7 +82,13 @@
       for (let k = 0; k < q.length; k++) { b.textContent = `📋 담는 중… ${k + 1}/${q.length}`; await copy(q[k].text); await new Promise(r => setTimeout(r, 700)); }
       b.disabled = false; b.textContent = '📋 전부 차례로 키보드 클립보드에 담기'; toast('📋 다 담았어요 · Flow 입력 칸에서 키보드의 📋(클립보드)를 열어 골라 붙여넣어요', 5000); return;
     }
-    if (b.id === 'bkbFlow') { const u = (TK().tool() || [])[2] || 'https://flow.google.com/'; window.open(u, '_blank', 'noopener'); return; }
+    if (b.id === 'bkbFlow') {
+      const u = (TK().tool() || [])[2] || 'https://flow.google.com/';
+      /* 설치한 앱(PWA) 안에서 열면 앱 속 작은 창으로 열려 화면 나누기가 안 돼요 → 안드로이드는 크롬 앱으로 따로 열기 */
+      if (/Android/i.test(navigator.userAgent)) { location.href = 'intent://' + u.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(u) + ';end'; }
+      else window.open(u, '_blank', 'noopener');
+      toast('↗ 크롬에서 열었어요 · 최근 앱 버튼(|||) → 크롬 아이콘 꾹 → 「분할 화면으로 열기」', 5000); return;
+    }
     if (b.id === 'bkbGrid') return gridSheet();
     const c = b.closest('.bkb-c'); if (!c) return; const i = +c.dataset.i, s = TK().scenes()[i]; if (!s) return;
     if (b.dataset.a === 'cpi') { if (await copy(s.img)) { mark('img' + i); toast(`📋 장면 ${s.n} 이미지 프롬프트 복사`); render(); } }

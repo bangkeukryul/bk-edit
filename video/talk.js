@@ -150,7 +150,7 @@ ${sceneReq()}${window.__bkeRef ? window.__bkeRef() : ''}`;
 - 위 화면 대본을 순서대로 **장면 ${n}개**로 나눠 줘. 장면마다 대사 ${+sec >= 15 ? Math.round(sec / 4) + '~' + Math.round(sec / 3) : '1~2'}줄 (${sec}초 동안 말할 수 있는 길이).
 - 장면 대사를 모두 이으면 ■ 화면 대본과 줄 · 순서가 똑같아야 해.
 ${+sec >= 15 ? `- 한 장면이 ${sec}초로 길어요. 한 장면 안에서 2~4개의 동작 · 표정 · 대사가 자연스럽게 이어지게 써 줘 (영상 프롬프트에 시간 순서대로: 0~${Math.round(sec / 3)}초 …, 그다음 …).\n` : ''}- 만드는 순서: ${tool[0]}에서 ① 장면 이미지를 먼저 만들고 ② 그 이미지로 영상(이미지에서 영상)을 만들어요. 그래서 장면마다 이미지 프롬프트와 영상(움직임) 프롬프트를 따로 써 줘.
-- 이미지 프롬프트: 영어 한 문단 · ${look[1]}, vertical 9:16, no text, no subtitles, no logos, no watermark · 이 장면의 한 순간(시작 장면).
+- 이미지 프롬프트: 영어 한 문단 · 반드시 이 스타일로 시작: "${look[1]}" · vertical 9:16, no text, no subtitles, no logos, no watermark · 이 장면의 한 순간(시작 장면).${T.vlook === 'real' ? '\n- 실사여야 해요: 동물 · 사람 · 장소가 진짜 사진처럼 보이게. 그림 · 만화 · 애니메이션 · 3D 느낌이 나는 단어(cute, cartoon, illustrated, stylized 등)는 쓰지 마.' : ''}
 - 영상 프롬프트: 영어 한두 문장 · 그 이미지에서 ${sec}초 동안 일어나는 움직임 · 카메라 움직임 1가지.
 - 실존 인물 · 실제 기관 로고 금지. 모든 장면에 같은 주인공 · 장소 묘사를 그대로 넣어 같은 인물로 보이게. 앞 장면이 끝난 모습에서 이어 시작.
 ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
@@ -499,13 +499,13 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
     other: ['기타 영상 AI', 8, ''],
   };
   const LOOKS = {
-    real: ['🎥 실사 다큐', 'photorealistic documentary footage, natural light, shallow depth of field, 35mm film look'],
+    real: ['📷 실사 (진짜 사진 · 영상처럼)', 'ultra photorealistic real-life photograph, shot on a professional DSLR camera, 35mm lens, natural daylight, realistic skin, fur and textures, true-to-life colors, NOT an illustration, NOT a cartoon, NOT anime, NOT a painting, NOT a 3D render'],
     info: ['📊 3D 인포그래픽', 'clean 3D motion-graphics style, soft studio lighting, minimal objects, pastel and navy palette'],
     illu: ['🎨 따뜻한 일러스트', 'warm hand-drawn 2D illustration, soft textures, gentle animation'],
     anime: ['✨ 애니메이션', 'bright anime-style animation, expressive, vivid colors'],
     cine: ['🎬 시네마틱', 'cinematic, dramatic lighting, rich contrast, slow camera movement'],
   };
-  if (!T.vtool) T.vtool = 'flow'; if (!T.vlook) T.vlook = T.topic === 'politics' || T.topic === 'economy' ? 'info' : 'real'; if (!T.vsec) T.vsec = '8';
+  if (!T.vtool) T.vtool = 'flow'; if (!T.vlook || !T.vlookPicked) T.vlook = 'real';   /* 기본은 실사 */ if (!T.vsec) T.vsec = '8';
   if (!Array.isArray(T.vscenes)) T.vscenes = [];
   function segInfo() {      // 문장별 시간: 목소리가 있으면 실제 시간, 없으면 글자 수로 어림
     const d = lines($('tkDisp').value), r = lines($('tkRead').value), N = A.S.narr;
@@ -534,7 +534,7 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
     $('tkVinfo').innerHTML = g.length ? `🎞 <b>클립 ${g.length}개</b>를 이어 붙여 약 <b>${Math.round(tot)}초</b> 영상 (${TOOLS[T.vtool][0]}로 ${g.length}번 생성) · 넣은 클립 <b>${done}/${g.length}</b>${A.S.narr ? '' : '<br>⚠️ 목소리를 넣으면 장면 시간이 정확해져요 (지금은 글자 수로 어림)'}` : '→ 먼저 📝 대본을 넣어 주세요';
     const u = TOOLS[T.vtool][2]; $('tkVopen').hidden = !u; if (u) $('tkVopen').href = u;
   }
-  [['tkVtool', 'vtool'], ['tkVlook', 'vlook'], ['tkVsec', 'vsec']].forEach(([id, k]) => $(id).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; T[k] = b.dataset.v; save(); renderVopts(); }));
+  [['tkVtool', 'vtool'], ['tkVlook', 'vlook'], ['tkVsec', 'vsec']].forEach(([id, k]) => $(id).addEventListener('click', e => { if (k === 'vlook') T.vlookPicked = true; const b = e.target.closest('button'); if (!b) return; T[k] = b.dataset.v; save(); renderVopts(); }));
   function buildVreq() {
     const g = groups(), tool = TOOLS[T.vtool], look = LOOKS[T.vlook], t = TOPICS[T.topic];
     return `너는 유튜브 쇼츠 영상 감독이야. 아래 대본의 장면마다 '${tool[0]}'에 넣을 AI 영상 생성 프롬프트를 만들어 줘.
@@ -779,6 +779,10 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   if ($('bkeSound')) $('bkeSound').addEventListener('click', e => { const b = e.target.closest('button[data-snd]'); if (!b) return; A.S.set.sound = b.dataset.snd; try { localStorage.setItem('bk-edit-video.v1', JSON.stringify(A.S.set)); } catch (er) { /* 무시 */ } renderSound(); prepClipAudio(); A.scheduleRebuild(0); });
   function renderSceneSum() { const el = $('bkeSceneSum'); if (!el) return; const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8'; el.innerHTML = `🎬 <b>${T.len}초 = ${sec}초 × ${n}장면</b> · 장면마다 대사 · 화면 설명 · 영상 프롬프트를 받아요`; }
   if ($('bkeSec')) $('bkeSec').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vsec = b.dataset.v; if (+T.vsec >= 15 && T.vtool !== 'kling') { T.vtool = 'kling'; toast('🎬 15 · 30초 장면은 Kling에 맞춰 요청서를 만들어요 (🎞 영상 클립 → 🛠 더 보기에서 바꿀 수 있어요)', 4000); } else if (+T.vsec <= 8 && T.vtool === 'kling') T.vtool = 'flow'; save(); $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderSceneSum(); renderVopts(); });
+  /* 🎨 화면 스타일 (대본 탭) — 기본 📷 실사 */
+  function renderLook() { const el = $('bkeLook'); if (!el) return; el.innerHTML = Object.entries(LOOKS).map(([k, t]) => `<button type="button" data-v="${k}" aria-pressed="${k === T.vlook}">${t[0]}</button>`).join(''); }
+  if ($('bkeLook')) $('bkeLook').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vlook = b.dataset.v; T.vlookPicked = true; save(); renderLook(); renderVopts(); });
+  renderLook();
   if ($('bkeSec')) $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === (T.vsec || '8'))));
   $('tkLen').addEventListener('click', () => setTimeout(renderSceneSum, 0));
   renderSound(); renderSceneSum();

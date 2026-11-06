@@ -125,6 +125,8 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
         <p class="hint" id="tkLenInfo"></p>
         <div class="field"><span class="lbl">장면 길이</span><div class="seg" id="bkeSec"><button type="button" data-v="6">6초</button><button type="button" data-v="8">8초 (Flow)</button><button type="button" data-v="10">10초</button><button type="button" data-v="15">15초</button><button type="button" data-v="30">30초 (Kling)</button></div></div>
         <p class="hint" id="bkeSceneSum"></p>
+        <span class="lbl">🎨 화면 스타일 <small>(기본 📷 실사)</small></span>
+        <div class="chips" id="bkeLook"></div>
         <div hidden><div id="tkTopics"></div><input type="text" id="tkCh"><input type="text" id="tkOpen"><input type="text" id="tkSrc"><input type="checkbox" id="tkEnd"></div>
       </div>
       <div class="group">
@@ -171,7 +173,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
       <div class="group bkb-top">
         <button type="button" class="bkb-flow" id="bkbFlow">↗ Flow 열기 (크롬 새 창)</button>
         <details class="bkb-how"><summary>📱 화면 나누기 (Flow 위 · BK에딧 아래)</summary>
-          <ol><li>위 버튼으로 Flow를 크롬에서 열어요.</li><li>휴대폰 <b>최근 앱 버튼(|||)</b> → <b>크롬</b> 아이콘을 꾹 → <b>「분할 화면으로 열기」</b> → Flow가 <b>위</b>로 가요.</li><li>아래 빈칸에서 <b>BK에딧</b>을 고르면 우리 앱이 <b>아래</b>로 와요.</li><li>반대로 열렸으면 가운데 막대 <b>⋯ → 「위치 바꾸기」</b>.</li></ol></details>
+          <ol><li>위 버튼을 누르면 Flow가 <b>크롬 앱</b>(BK에딧 밖)으로 열려요.</li><li>휴대폰 <b>최근 앱 버튼(|||)</b> → <b>크롬</b> 아이콘을 꾹 → <b>「분할 화면으로 열기」</b> → Flow가 <b>위</b>로 가요.</li><li>아래 빈칸에서 <b>BK에딧</b>을 고르면 우리 앱이 <b>아래</b>로 와요.</li><li>반대로 열렸으면 가운데 막대 <b>⋯ → 「위치 바꾸기」</b>.</li></ol></details>
         <button type="button" class="bkb-next" id="bkbNext">📋 다음 복사</button>
         <div class="bkb-2b"><button type="button" class="ghost small" id="bkbPrev">◀ 한 칸 전</button><button type="button" class="ghost small" id="bkbReset">↺ 처음부터</button></div>
         <div id="bkbSheet" class="bkb-sheet" hidden><b>🧑‍🎨 기준 이미지 (맨 처음 한 번 · 모든 장면 참고 이미지)</b><p id="bkbSheetTx"></p><button type="button" class="ghost small" id="bkbSheetCp">📋 기준 이미지 프롬프트 복사</button></div>
