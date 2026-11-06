@@ -96,8 +96,8 @@ function textInput(kind, modes) {
     p.box.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.as) { as = b.dataset.as; p.box.querySelectorAll('[data-as]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); return; }
-      if (b.dataset.x === 'close') { stopAll(); p.close(); res(null); }
-      if (b.dataset.x === 'ok') { stopAll(); const t = tx.value.trim(); p.close(); res(t ? { text: t, as } : null); }
+      if (b.dataset.x === 'close') { stopAll(); try { tx.blur(); } catch (er) { /* 무시 */ } p.close(); res(null); }
+      if (b.dataset.x === 'ok') { stopAll(); const t = tx.value.trim(); try { tx.blur(); } catch (er) { /* 무시 */ } p.close(); res(t ? { text: t, as } : null); }
     });
     setTimeout(() => tx.focus(), 200);
   });

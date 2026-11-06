@@ -59,13 +59,14 @@
   const END_LINE = '좋아요와 구독 부탁드려요!';
 
   // ═════════ 저장 ═════════
-  const DEF = { topic: 'politics', len: '60', per: {}, memo: '', ans: '', title: '', disp: '', read: '', thumb: '', desc: '', tags: '', srcOut: '', chk: '', pc: '', pin: '', vmode: 'pc', end: true };
+  const DEF = { topic: 'politics', len: '60', per: {}, custom: '', memo: '', ans: '', title: '', disp: '', read: '', thumb: '', desc: '', tags: '', srcOut: '', chk: '', pc: '', pin: '', vmode: 'pc', end: true };
   let T;
   try { T = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { T = Object.assign({}, DEF); }
   let saveT = 0;
   const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(T)); } catch (e) { /* 저장 불가 */ } }, 250); };
-  const P = () => { const t = TOPICS[T.topic] || TOPICS.politics; const p = T.per[T.topic] || {}; const ch = p.ch != null ? p.ch : t.ch;
-    return { ch, open: p.open != null ? p.open : (ch ? `안녕하세요 ${ch}입니다.` : ''), src: p.src != null ? p.src : t.src }; };
+  /* BK에딧: 채널 이름 · 첫 인사 · 출처는 1차 편집에서 쓰지 않아요 (유튜브에 올릴 때 따로) */
+  const P = () => ({ ch: '', open: '', src: '' });
+  T.end = false;
   const setPer = (k, v) => { T.per[T.topic] = Object.assign({}, T.per[T.topic] || {}, { [k]: v }); save(); };
 
   const toast = (m, ms) => A.toast(m, ms);
@@ -97,11 +98,11 @@
 
   // ═════════ ② AI 요청서 ═════════
   function buildReq() {
-    const t = TOPICS[T.topic], p = P(), L = LEN[T.len], memo = T.memo.trim();
+    const t0 = TOPICS[T.topic] || TOPICS.politics, t = T.topic === 'free' && T.custom ? Object.assign({}, t0, { n: T.custom }) : t0, p = P(), L = LEN[T.len], memo = T.memo.trim();
     return `너는 유튜브 쇼츠 · 인스타 릴스 · 틱톡용 '${t.n}' 대본 작가야.
 첨부한 캡처 · 자료${memo ? '와 아래 메모' : ''}를 꼼꼼히 읽고, 그 내용만으로 약 ${T.len}초 분량의 쇼츠 대본을 써 줘.
 
-[채널] ${p.ch || '(없음)'}
+[주제] ${t.n}
 [분량] 화면 대본 약 ${L[0]}자 (띄어쓰기 포함 · 출처 제외) · ${L[1]}줄 안팎
 ${memo ? `[메모]\n${memo}\n` : ''}
 [구성]
@@ -176,7 +177,7 @@ ${t.rules.map(r => '- ' + r).join('\n')}
     }
     if (!r.read) r.read = r.disp; if (!r.disp) r.disp = r.read;
     SF.concat(['srcOut', 'chk']).forEach(k => { T[k] = r[k] || ''; });
-    if (r.srcOut && !/확인\s*필요/.test(r.srcOut)) { setPer('src', r.srcOut); $('tkSrc').value = r.srcOut; }
+    /* 출처 띠는 1차 편집에서 쓰지 않아요 */
     save(); fillScript(); syncNarrText(); renderVopts(); renderVcards();
     $('tkScript').scrollIntoView({ behavior: 'smooth', block: 'start' });
     toast('✨ 정리했어요 · 대본을 확인해 주세요');
@@ -718,6 +719,7 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   renderTopics(); fillScript(); renderVmode(); pcHint(); renderNarr(); renderVopts(); renderVcards();
   document.addEventListener('bk-tab', () => { renderChecks(); renderVopts(); renderVcards(); if (T.vmode === 'rec') renderRec(); });
   document.addEventListener('bk-photos', () => { renderVopts(); renderVcards(); });
-  A.S.chsrc = () => { const p = P(); return { ch: p.ch, src: p.src }; };
+  A.S.chsrc = () => ({ ch: '', src: '' });
+  window.__bkeTalk = { TOPICS, get topic() { return T.topic; }, get custom() { return T.custom; }, setTopic(k, c) { T.topic = k; if (c != null) T.custom = c; save(); renderTopics(); A.scheduleRebuild(200); }, buildReq: () => buildReq() };
   window.__talk = { T, parseScenes, groups, buildVreq, parseAns, splitBySilence, readBkts, toWav, setNarr, decode, buildReq }; // 테스트용
 })();

@@ -46,6 +46,11 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 .chips button{min-height:46px;font-size:.98rem}
 .group h3{font-size:1.15rem}
 .tabbar button{min-height:62px;font-size:.9rem!important;font-weight:800}.tabbar svg{width:26px!important;height:26px!important}.tabbar button[aria-current=page]{color:#0f766e!important;background:#ccfbf1;border-radius:12px}
+.bke-topic{display:block;width:100%;min-height:64px;border-radius:18px;border:2px dashed #14b8a6;background:#fff;color:#0f766e;font-weight:900;font-size:1.2rem}.bke-topic.on{border-style:solid;background:#ccfbf1}
+.bke-topicline{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#ccfbf1;border-radius:12px;padding:8px 12px;font-weight:900;color:#0f766e;margin-bottom:8px}
+.bke-files{display:flex;gap:6px;overflow-x:auto;padding:4px 0}.bke-files img{flex:none;width:84px;height:84px;object-fit:cover;border-radius:10px;background:#0f172a}.bke-files .vd{flex:none;width:84px;height:84px;border-radius:10px;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem}
+.bke-ai{background:linear-gradient(135deg,#14b8a6,#0e7490)!important;color:#fff!important;border:0!important;min-height:58px;font-size:1.05rem!important}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tg button{min-height:64px;border-radius:14px;border:1.5px solid #dbe3ef;background:#fff;font-weight:900;font-size:1rem;color:#174782}.tg button[aria-pressed=true]{background:#0d9488;color:#fff;border-color:#0d9488}
 </style>
 </head>
 <body>
@@ -61,12 +66,11 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 
   <!-- 첫 화면: 미리보기 없이 · 어떤 영상 + ➕ 자료 넣기 + ✅ 선택 완료 -->
   <section class="bke-start" id="bkeStart">
-    <div class="bke-steps"><b class="on">① 자료 넣기</b><span>→</span><b>② 대본 · 목소리</b><span>→</span><b>③ 장면 · 만들기</b></div>
-    <h2>어떤 영상을 만들까요?</h2>
-    <div class="bke-chips" id="bkeTopics"></div>
-    <h2 class="sm">분량</h2>
-    <div class="bke-chips" id="bkeLen"></div>
-    <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 📰 스크랩 · ✍️ 기사 · 글 · 🎵 노래</small></button>
+    <div class="bke-steps"><b class="on">① 주제 · 자료</b><span>→</span><b>② AI 대본 · 목소리</b><span>→</span><b>③ 장면 · 만들기</b></div>
+    <h2>① 어떤 주제로 만들까요?</h2>
+    <button type="button" class="bke-topic" id="bkeTopicBtn">➕ 주제 고르기</button>
+    <h2>② 자료를 넣어 주세요</h2>
+    <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 내 파일 · 내 보관함 · ✍️ 글</small></button>
     <div class="bke-pend" id="bkePend" hidden></div>
     <button type="button" class="bke-done" id="bkeDone" disabled>✅ 선택 완료 → 편집하기<small id="bkeInfo">➕ 자료 넣기로 사진 · 기사 · 글을 넣어 주세요</small></button>
     <button type="button" class="bke-skip" id="bkeSkip">▶ 자료 없이 바로 편집 화면으로 (이어서 하기)</button>
@@ -91,22 +95,22 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
   <main class="panels">
     <!-- 📝 대본 -->
     <section class="panel" data-panel="script">
-      <div class="panel-head"><h2>📝 대본</h2><p>소재와 분량을 고르고, AI에게 대본을 받아요. 직접 써도 돼요.</p></div>
-      <div class="group">
-        <h3>① 소재 · 분량</h3>
-        <div class="chips tk-topics" id="tkTopics"></div>
+      <div class="panel-head"><h2>📝 대본</h2><p>넣은 자료를 보고 AI에게 대본을 받아요. 직접 써도 돼요.</p></div>
+      <div class="group bke-src">
+        <div class="bke-topicline"><span id="bkeTopicNow">주제</span><button type="button" class="ghost small" id="bkeTopicChange">바꾸기</button></div>
+        <h3>📎 넣은 자료</h3>
+        <div class="bke-files" id="bkeFiles"></div>
+        <div class="field col"><label for="tkMemo">자료 메모 <small>(선택 · 기사 글 붙여넣기, 강조할 점)</small></label><textarea id="tkMemo" rows="4" class="tk-sm" placeholder="캡처 사진은 AI 앱에서 📎로 같이 첨부해요."></textarea></div>
+        <h3 style="margin-top:14px">⏱ 몇 초짜리로 만들까요?</h3>
         <div class="field"><span class="lbl">분량</span><div class="seg" id="tkLen"><button type="button" data-v="15">15초</button><button type="button" data-v="30">30초</button><button type="button" data-v="45">45초</button><button type="button" data-v="60">60초</button></div></div>
         <p class="hint" id="tkLenInfo"></p>
-        <div class="field col"><label for="tkCh">채널 이름 <small>(영상 위 띠)</small></label><input type="text" id="tkCh" placeholder="예: 1분 정치 뉴스"></div>
-        <div class="field col"><label for="tkOpen">첫 인사 <small>(대본 첫 줄 · 비우면 바로 시작)</small></label><input type="text" id="tkOpen"></div>
-        <div class="field col"><label for="tkSrc">출처 <small>(영상 맨 아래)</small></label><input type="text" id="tkSrc" placeholder="예: 정책브리핑 www.korea.kr"></div>
-        <div class="field toggle"><label for="tkEnd">마지막 줄 ‘좋아요와 구독 부탁드려요!’</label><input type="checkbox" id="tkEnd" role="switch"></div>
-        <div class="field col"><label for="tkMemo">자료 메모 <small>(선택 · 기사 글 붙여넣기, 강조할 점)</small></label><textarea id="tkMemo" rows="4" class="tk-sm" placeholder="캡처 사진은 AI 앱에서 📎로 같이 첨부해요."></textarea></div>
+        <div hidden><div id="tkTopics"></div><input type="text" id="tkCh"><input type="text" id="tkOpen"><input type="text" id="tkSrc"><input type="checkbox" id="tkEnd"></div>
       </div>
-
       <div class="group">
-        <h3>② AI로 대본 받기</h3>
-        <button type="button" class="primary block-s" id="tkReqBtn">🤖 AI 요청서 만들기</button>
+        <h3>🤖 AI에게 대본 받기</h3>
+        <button type="button" class="primary block-s bke-ai" id="bkeShareAI">🤖 AI에게 보내기 (요청서 + 넣은 사진)</button>
+        <p class="hint">공유 화면에서 <b>Gemini</b> · <b>ChatGPT</b> 앱을 고르면 요청서와 사진이 한 번에 넘어가요.</p>
+        <button type="button" class="ghost block-s" id="tkReqBtn">📋 요청서만 보기 · 복사</button>
         <div id="tkReqBox" hidden>
           <textarea id="tkReq" class="tk-sm" rows="7" readonly></textarea>
           <div class="admin-2"><button type="button" class="primary small" id="tkReqCopy">📋 요청서 복사</button><a class="button ghost small" href="https://gemini.google.com/app" target="_blank" rel="noopener">✨ Gemini 열기</a></div>
