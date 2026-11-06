@@ -51,6 +51,40 @@
   const showKey = on => { $('keyBox').hidden = !on; };
   showKey(!key());
   $('keySave').addEventListener('click', () => { const k = $('keyIn').value.trim(); if (!/^AIza[\w-]{20,}$/.test(k)) return alert('키 모양이 달라요. 「AIza」로 시작하는 키를 그대로 붙여넣어 주세요.'); LS(KEYNAME, k); $('keyIn').value = ''; quota(0); showKey(false); toast('🔑 저장했어요 (이 휴대폰에만)'); });
+  /* 📖 사용 설명서 */
+  const GUIDE = `<div class="guide">
+    <p style="margin:0">🔎 레퍼런스는 <b>잘된 영상(본보기)</b>을 찾아 📌 담아 두고, 🎵 쇼츠 · 🎬 영상 만들 때 <b>따라 할 본보기</b>로 붙여 쓰는 곳이에요.<br>영상 파일을 내려받는 게 아니라 <b>주소 · 제목 · 내 메모</b>만 이 휴대폰에 저장해요.</p>
+    <h4>① 유튜브에서 찾기 (🔎 찾기 탭)</h4>
+    <ol><li>검색어 쓰기 (띄어쓰기 하면 더 잘 나와요: 「사자 원숭이」)</li><li>조건 고르기 — 📱 길이 · 📅 기간 · 👀 최소 조회수 · 🌏 나라 · ↕ 순서 · 🔧 더 좁히기</li><li>맨 아래 <b>🔎 이 조건으로 찾기</b> (100점)</li><li>그림을 누르면 ▶ 재생 · <b>↗ 유튜브</b>는 유튜브 앱으로 · <b>📌 담기</b></li></ol>
+    <div class="tip">💡 한 번에 맞추기: <b>🔥 요즘 터진 것</b>(최근 1주 · 하루 조회수 순) · <b>🐣 작은 채널 대박</b>(구독자 10만 이하 · 구독자 대비)<br>💡 결과가 없으면 까닭이 나와요. 👀 조회수 · 🌏 나라 · 📺 채널 크기를 바꾸면 받은 영상에서 바로 다시 걸러요 (0점).</div>
+    <h4>② 유튜브 검색 키 만들기 (처음 한 번 · 무료)</h4>
+    <div class="tip">유튜브 찾기는 구글이 주는 <b>API 키</b>가 있어야 해요. 하루 <b>10,000점</b>(검색 약 100번)까지 무료이고 카드 등록은 필요 없어요.</div>
+    <ol>
+      <li>크롬 ⋮ → <b>새 시크릿 탭</b> → 아래 주소를 열고 내 구글 계정으로 로그인<br><code>https://console.cloud.google.com/projectcreate</code><button type="button" class="cp" data-cp="https://console.cloud.google.com/projectcreate">복사</button><br>· 「액세스 차단됨 · 2단계 인증」이 나오면: 구글 계정 → 보안 → <b>2단계 인증</b>을 켜고 몇 분 뒤 다시</li>
+      <li>프로젝트 이름 <b>BK에딧</b> → <b>만들기</b></li>
+      <li>아래 주소 → 위 프로젝트가 BK에딧인지 확인 → <b>사용</b><br><code>https://console.cloud.google.com/apis/library/youtube.googleapis.com</code><button type="button" class="cp" data-cp="https://console.cloud.google.com/apis/library/youtube.googleapis.com">복사</button></li>
+      <li><b>+ 사용자 인증 정보 만들기</b> → (물어보면) <b>공개 데이터</b> → 다음 → 키가 나오면 <b>복사</b><br><code>https://console.cloud.google.com/apis/credentials</code><button type="button" class="cp" data-cp="https://console.cloud.google.com/apis/credentials">복사</button></li>
+      <li>BK에딧 🔎 레퍼런스 오른쪽 위 <b>🔑</b> → 붙여넣기 → <b>저장</b></li>
+      <li>🔒 (권장) 키 <b>수정</b> → 애플리케이션 제한: <b>웹사이트</b> → <code>https://bangkeukryul.github.io/*</code><button type="button" class="cp" data-cp="https://bangkeukryul.github.io/*">복사</button> · API 제한: <b>YouTube Data API v3</b>만 → 저장 → 5분 뒤 사용</li>
+    </ol>
+    <div class="tip warn">⚠️ 키는 <b>이 휴대폰에만</b> 저장돼요. 카톡 · 메일 · 채팅창에 붙여넣지 마세요.<br>「키 잠금 설정에 이 주소가 없어요」가 나오면 6번의 웹사이트 주소를 넣거나, 새 키를 만들어 주세요.</div>
+    <h4>③ 🔋 점수</h4>
+    <ul><li>검색 1번 = <b>100점</b> (결과 최대 50개) · 쪽 넘기기 · ▶ 보기 · 다시 거르기는 <b>0점</b></li><li>조건에 맞는 게 적으면 한 번 더 자동으로 찾아요 (100점 더)</li><li>매일 오후 4~5시쯤 10,000점으로 다시 채워져요 · 키를 바꾸면 10,000점부터</li></ul>
+    <h4>④ 인스타 · 틱톡 영상 담기</h4>
+    <div class="tip">인스타 · 틱톡은 일반인이 쓸 수 있는 검색 기능(API)이 없어서 BK에딧 안에서 찾을 수는 없어요. 대신 <b>주소(링크)로 담아요.</b></div>
+    <ol><li>인스타 · 틱톡에서 마음에 드는 영상의 <b>✈️ 공유(종이비행기)</b> 또는 <b>⋯</b> → <b>링크 복사</b></li><li>BK에딧 🔎 레퍼런스 → <b>📌 내 레퍼런스</b> 탭</li><li><b>📋 붙여넣기</b> → <b>📌 담기</b></li><li>📝 메모에서 <b>제목</b>(예: 「강아지 · 고양이 우유 AI」)과 🪝 후킹 등을 적어 두기<br>· 인스타는 제목 · 그림을 가져올 수 없어서 직접 적어 두면 찾기 쉬워요</li></ol>
+    <div class="tip">💡 「🎵 틱톡에서 찾기 · 📸 인스타에서 찾기」 단추는 검색어로 그 앱 · 사이트를 열어 줘요. 거기서 보고 링크를 복사해 오세요.</div>
+    <h4>⑤ 쇼츠 · 영상 만들 때 쓰기</h4>
+    <ol><li>📌 내 레퍼런스 → <b>🎬 이걸로 만들기 ▸</b> → 🎵 쇼츠 / 🎬 영상 고르기<br>또는 쇼츠 · 영상 만들기 <b>➕ 자료 넣기 → 🎯 내 레퍼런스</b></li><li>화면 맨 위에 <b>「🎯 참고 영상」 띠</b>가 생겨요 — ▶ 보기로 언제든 다시 보고, ✕로 빼요</li><li>🎬 영상 만들기는 AI 요청서에 링크 · 따라 할 점 · 메모가 함께 들어가요 (형식만 참고 · 새로 만들기)</li></ol>
+    <div class="tip warn">⚠️ 다른 사람 영상은 <b>형식 · 흐름만 참고</b>해요. 장면 · 대사 · 음악을 그대로 베끼면 저작권 문제가 될 수 있어요.</div>
+  </div>`;
+  function help() {
+    const s = sheet('📖 레퍼런스 사용 설명서', GUIDE);
+    s.box.addEventListener('click', async e => { const b = e.target.closest('[data-cp]'); if (!b) return; try { await navigator.clipboard.writeText(b.dataset.cp); b.textContent = '✅ 복사됨'; } catch (er) { b.textContent = '길게 눌러 복사'; } });
+  }
+  $('helpBtn').addEventListener('click', help);
+  $('helpLine').addEventListener('click', help);
+  if (key()) $('helpLine').hidden = true;   // 키를 넣은 뒤에는 📖 단추만 (오른쪽 위)
   $('keyEdit').addEventListener('click', () => { tab('find'); showKey($('keyBox').hidden); if (!$('keyBox').hidden) { $('keyBox').scrollIntoView({ behavior: 'smooth' }); setTimeout(() => $('keyIn').focus(), 300); } });
 
   /* ── 고르기 (기억) ── */
