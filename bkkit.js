@@ -20,7 +20,8 @@ const PREF = 'bkPickSave';   // ask · always · never
 .bkk-pg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0}.bkk-pg button{min-width:42px;min-height:42px;border-radius:10px;border:1.5px solid #cbd5e1;background:#fff;font-weight:900;color:#5b21b6}.bkk-pg button.on{background:#5b21b6;color:#fff;border-color:#5b21b6}
 .bkk-refbar{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f5f3ff,#fdf2f8);border:1.5px solid #ddd6fe;border-radius:14px;padding:6px 8px;margin:0 0 10px;font:15px/1.35 "Noto Sans KR",system-ui,sans-serif;color:#111827}.bkk-refbar i{flex:none;width:44px;height:44px;border-radius:8px;background:#0f172a center/cover}.bkk-refbar div{flex:1;min-width:0}.bkk-refbar div b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}.bkk-refbar div small{color:#7c3aed;font-weight:800;font-size:.75rem}.bkk-refbar button{flex:none;min-height:40px;padding:0 10px;border-radius:10px;border:0;background:#5b21b6;color:#fff;font-weight:900;font-size:.85rem}.bkk-refbar button.x{background:#fff;color:#64748b;border:1.5px solid #e2e8f0}
 .bkk-refchip{flex:none;min-height:36px;padding:0 10px;border-radius:999px;border:0;background:#ede9fe;color:#5b21b6;font-weight:900;font-size:.82rem;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bkk-play{position:relative;width:100%;aspect-ratio:9/16;max-height:60vh;background:#000;border-radius:14px;overflow:hidden}.bkk-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.bkk-tags span{display:inline-block;background:#ede9fe;color:#5b21b6;border-radius:8px;padding:0 6px;margin:0 4px 4px 0;font-weight:800;font-size:.8rem}
+.bkk-play{position:relative;width:100%;aspect-ratio:9/16;max-height:60vh;background:#000;border-radius:14px;overflow:hidden}.bkk-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.bkk-wg{margin:6px 0}.bkk-wg>span{display:block;font-weight:900;font-size:.82rem;color:#5b21b6;margin:6px 0 4px}.bkk-wg>div{display:flex;flex-wrap:wrap;gap:6px}.bkk-wg button{min-height:38px;padding:0 10px;border-radius:999px;border:1.5px solid #ddd6fe;background:#fff;color:#5b21b6;font-weight:800;font-size:.84rem}.bkk-wg button[aria-pressed=true]{background:#5b21b6;border-color:#5b21b6;color:#fff}
+.bkk-tags span{display:inline-block;background:#ede9fe;color:#5b21b6;border-radius:8px;padding:0 6px;margin:0 4px 4px 0;font-weight:800;font-size:.8rem}
 .bkk .bb{display:block;width:100%;min-height:56px;margin-top:10px;border-radius:16px;border:0;font-weight:900;font-size:1.05rem;background:#e8eef8;color:#174782}.bkk .bb.pri{background:#0d9488;color:#fff}.bkk .bb:disabled{opacity:.45}
 .bkk textarea{width:100%;min-height:150px;border:1.5px solid #dbe3ef;border-radius:14px;padding:12px;font:inherit;box-sizing:border-box}
 .bkk .lg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}.bkk .lg button{position:relative;aspect-ratio:1;border:2px solid transparent;border-radius:12px;background:#0f172a center/cover no-repeat;padding:0;color:#fff;font-size:1.4rem}
@@ -169,7 +170,28 @@ function textCard(text, w, h) {
   return new Promise(r => c.toBlob(b => r(new File([b], '글화면_' + Date.now() + '.png', { type: 'image/png' })), 'image/png'));
 }
 /* ═══ 🎯 내 레퍼런스 (🔎 레퍼런스에서 📌 담은 영상 · IndexedDB 'bk-editapp-ref') — 주소 · 메모만, 영상 파일은 아님 ═══ */
-const REFTAG = { hook: '🪝 첫 3초 후킹', cap: '💬 자막', music: '🎵 음악', len: '⏱ 길이', pace: '✂️ 장면 빠르기', flow: '🎬 구성', thumb: '🖼 썸네일' };
+const REFWHAT = [
+  ['🎬 구성', [['hook', '🪝 첫 3초 후킹'], ['flow', '전체 흐름 (기승전결)'], ['twist', '반전 · 결말'], ['len', '⏱ 길이 · 장면 수']]],
+  ['🕺 움직임', [['act', '동작 · 행동'], ['dance', '💃 춤 (안무)'], ['face', '표정 · 리액션'], ['gest', '손짓 · 몸짓'], ['move', '걷기 · 뛰기 · 동선']]],
+  ['🎥 촬영', [['angle', '카메라 각도 (정면 · 위 · 아래)'], ['cam', '카메라 움직임 (줌 · 따라가기)'], ['shot', '화면 크기 (얼굴 · 전신)'], ['pace', '✂️ 컷 바뀌는 빠르기']]],
+  ['👤 인물 · 장소', [['cast', '인물 수 · 관계'], ['outfit', '옷 · 소품'], ['place', '장소 · 배경'], ['light', '조명 · 색감 · 분위기']]],
+  ['🗣 소리 · 말', [['tone', '말투 · 대사 리듬'], ['narr', '내레이션'], ['music', '🎵 음악 분위기 · 박자'], ['sfx', '효과음']]],
+  ['💬 글자', [['cap', '💬 자막 모양 · 위치'], ['big', '큰 글씨 강조'], ['thumb', '🖼 썸네일 문구']]],
+];
+const REFLVL = [['feel', '느낌만'], ['similar', '비슷하게'], ['max', '동작까지 최대한']];
+const REFTAG = Object.fromEntries(REFWHAT.flatMap(g => g[1]));
+/** 묶음별 고르기 칩 (레퍼런스 메모 · 영상 만들기 참고 영상에서 같이 써요) */
+function whatHTML(on) {
+  return REFWHAT.map(([g, L]) => `<div class="bkk-wg"><span>${g}</span><div>${L.map(([k, l]) => `<button type="button" data-w="${k}" aria-pressed="${(on || []).includes(k)}">${l}</button>`).join('')}</div></div>`).join('');
+}
+function refFile(id) {
+  return new Promise(res => {
+    let r; try { r = indexedDB.open('bk-editapp-ref', 1); } catch (e) { return res(null); }
+    r.onupgradeneeded = () => r.result.createObjectStore('r');
+    r.onsuccess = () => { try { const q = r.result.transaction('r').objectStore('r').get(id); q.onsuccess = () => { const v = q.result; res(v && v.file ? new File([v.file], v.file.name || ((v.title || '참고영상') + '.mp4'), { type: v.file.type || 'video/mp4' }) : null); }; q.onerror = () => res(null); } catch (e) { res(null); } };
+    r.onerror = () => res(null);
+  });
+}
 const nview = n => { n = +n || 0; return n >= 1e8 ? (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억' : n >= 1e4 ? Math.round(n / 1e4).toLocaleString() + '만' : n.toLocaleString(); };
 function refAll() {
   return new Promise(res => {
@@ -204,20 +226,22 @@ async function refPick() {
     });
   });
 }
-function refPlay(it) {
-  const yt = it.kind === 'yt' && it.vid;
+async function refPlay(it) {
+  const yt = it.kind === 'yt' && it.vid, f = it.kind === 'file' ? await refFile(it.id) : null, fu = f ? URL.createObjectURL(f) : '';
   const p = panel(`<h3>🎯 ${esc((it.title || '참고 영상').slice(0, 30))} <button type="button" data-x="close">✕</button></h3>
+    ${f ? `<div class="bkk-play"><video src="${fu}" controls playsinline autoplay style="position:absolute;inset:0;width:100%;height:100%;background:#000"></video></div>` : it.kind === 'file' ? '<p>⚠️ 이 휴대폰에서 영상 파일을 찾지 못했어요</p>' : ''}
     ${yt ? `<div class="bkk-play"><iframe src="https://www.youtube-nocookie.com/embed/${esc(it.vid)}?playsinline=1&autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>` : ''}
     ${(it.tags && it.tags.length) || it.memo ? `<div class="bkk-tags" style="margin-top:8px">${(it.tags || []).map(t => `<span>${REFTAG[t] || t}</span>`).join('')}</div>${it.memo ? `<p style="margin:4px 0 0;background:#faf5ff;border-radius:10px;padding:8px">📝 ${esc(it.memo)}</p>` : ''}` : ''}
-    <a href="${esc(it.url)}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;min-height:50px;line-height:50px;border-radius:14px;background:#ede9fe;color:#5b21b6;font-weight:900;text-decoration:none">↗ ${yt ? '유튜브' : '원래 사이트'}에서 보기</a>`);
-  p.box.addEventListener('click', e => { if (e.target.closest('[data-x="close"]')) p.close(); });
-  p.el.addEventListener('click', e => { if (e.target === p.el) p.close(); });
+    ${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;min-height:50px;line-height:50px;border-radius:14px;background:#ede9fe;color:#5b21b6;font-weight:900;text-decoration:none">↗ ${yt ? '유튜브' : '원래 사이트'}에서 보기</a>` : ''}`);
+  const cl = () => { p.close(); if (fu) URL.revokeObjectURL(fu); };
+  p.box.addEventListener('click', e => { if (e.target.closest('[data-x="close"]')) cl(); });
+  p.el.addEventListener('click', e => { if (e.target === p.el) cl(); });
 }
 /** 이 화면(쇼츠 · 영상)에 붙인 참고 영상: 저장 · 위 띠 · 머리 작은 단추 */
 const refKey = k => 'bkRefUse:' + k;
 function refGet(k) { try { return JSON.parse(localStorage.getItem(refKey(k)) || 'null'); } catch (e) { return null; } }
 function refSet(k, it) {
-  try { if (it) localStorage.setItem(refKey(k), JSON.stringify({ id: it.id, url: it.url, kind: it.kind, vid: it.vid, title: it.title, thumb: it.thumb, views: it.views, ch: it.ch, tags: it.tags || [], memo: it.memo || '' })); else localStorage.removeItem(refKey(k)); } catch (e) { /* 무시 */ }
+  try { if (it) localStorage.setItem(refKey(k), JSON.stringify({ id: it.id, url: it.url || '', kind: it.kind, vid: it.vid, title: it.title, thumb: it.thumb, views: it.views, ch: it.ch, tags: it.tags || [], lvl: it.lvl || '', memo: it.memo || '' })); else localStorage.removeItem(refKey(k)); } catch (e) { /* 무시 */ }
 }
 function refBar(k, hosts, onClear) {
   document.querySelectorAll('.bkk-refbar,.bkk-refchip').forEach(x => x.remove());
@@ -232,5 +256,5 @@ function refBar(k, hosts, onClear) {
   });
   return it;
 }
-g.BKKIT = { refPick, refPlay, refGet, refSet, refBar, open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
+g.BKKIT = { REFWHAT, REFLVL, REFTAG, whatHTML, refFile, refPick, refPlay, refGet, refSet, refBar, open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
 })(window);

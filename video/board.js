@@ -30,14 +30,15 @@
   /* 📋 다음 복사: 기준 이미지 → 장면1 이미지 → 장면1 영상 → 장면2 이미지 → … */
   function queue() {
     const t = TK(); if (!t) return []; const q = [], sh = t.sheet();
-    if (sh) q.push({ k: 'sheet', label: '기준 이미지 (주인공 · 장소)', text: sh });
+    if (sh) q.push({ k: 'sheet', label: '기준 이미지 (주인공 · 장소)', text: PRE(sh) });
     t.scenes().forEach((s, i) => {
-      if (s.img) q.push({ k: 'img', i, label: `장면 ${s.n} · 🖼 이미지 프롬프트`, text: s.img });
+      if (s.img) q.push({ k: 'img', i, label: `장면 ${s.n} · 🖼 이미지 프롬프트`, text: PRE(s.img) });
       q.push({ k: 'vid', i, label: `장면 ${s.n} · 🎬 영상 프롬프트 + 대사`, text: vidText(s) });
     });
     return q;
   }
-  const vidText = s => `${s.vid || s.d || ''}${s.lines.length ? ` The character speaks in Korean: "${s.lines.join(' ').replace(/"/g, "'")}"` : ''}`.trim();
+  const PRE = t => window.__bkeWithPre ? window.__bkeWithPre(t) : t;   // 🇰🇷 등장인물 · 장소를 맨 앞에
+  const vidText = s => `${PRE(s.vid || s.d || '')}${s.lines.length ? ` The character speaks in Korean: "${s.lines.join(' ').replace(/"/g, "'")}"` : ''}`.trim();
   const DONE = () => { try { return new Set(JSON.parse(ls('bkeCopied') || '[]')); } catch (e) { return new Set(); } };
   const mark = key => { const d = DONE(); d.add(key); ls('bkeCopied', JSON.stringify([...d])); };
   let idx = +(ls('bkeCopyIdx') || 0);
@@ -76,7 +77,7 @@
     if (b.id === 'bkbNext') { const q = queue(); if (idx >= q.length) return; const it = q[idx]; if (await copy(it.text)) { mark(it.k === 'sheet' ? 'sheet' : it.k + it.i); toast(`📋 ${it.label} 복사 · 위 Flow 입력 칸에 붙여넣어요`, 2600); idx++; ls('bkeCopyIdx', String(idx)); render(); } else toast('복사가 안 됐어요 · 한 번 더 눌러 주세요'); return; }
     if (b.id === 'bkbPrev') { idx = Math.max(0, idx - 1); ls('bkeCopyIdx', String(idx)); renderNext(); return; }
     if (b.id === 'bkbReset') { idx = 0; ls('bkeCopyIdx', '0'); ls('bkeCopied', '[]'); render(); return; }
-    if (b.id === 'bkbSheetCp') { if (await copy(TK().sheet())) { mark('sheet'); toast('📋 기준 이미지 프롬프트를 복사했어요'); } return; }
+    if (b.id === 'bkbSheetCp') { if (await copy(PRE(TK().sheet()))) { mark('sheet'); toast('📋 기준 이미지 프롬프트를 복사했어요'); } return; }
     if (b.id === 'bkbAll') {
       const q = queue(); if (!q.length) return; b.disabled = true;
       for (let k = 0; k < q.length; k++) { b.textContent = `📋 담는 중… ${k + 1}/${q.length}`; await copy(q[k].text); await new Promise(r => setTimeout(r, 700)); }
@@ -91,7 +92,7 @@
     }
     if (b.id === 'bkbGrid') return gridSheet();
     const c = b.closest('.bkb-c'); if (!c) return; const i = +c.dataset.i, s = TK().scenes()[i]; if (!s) return;
-    if (b.dataset.a === 'cpi') { if (await copy(s.img)) { mark('img' + i); toast(`📋 장면 ${s.n} 이미지 프롬프트 복사`); render(); } }
+    if (b.dataset.a === 'cpi') { if (await copy(PRE(s.img))) { mark('img' + i); toast(`📋 장면 ${s.n} 이미지 프롬프트 복사`); render(); } }
     if (b.dataset.a === 'cpv') { if (await copy(vidText(s))) { mark('vid' + i); toast(`📋 장면 ${s.n} 영상 프롬프트 + 대사 복사`); render(); } }
     if (b.dataset.a === 'cpp') { const ok = await copyImg(IMG.get(i)); toast(ok ? `🖼 장면 ${s.n} 사진을 복사했어요 · Flow 입력 칸을 길게 눌러 붙여넣어요` : '이 휴대폰은 사진 복사가 안 돼요 · 사진을 꾹 눌러 위 Flow로 끌어다 놓거나, Flow의 ＋로 다운로드에서 골라 주세요', 4500); }
   });

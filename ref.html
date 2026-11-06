@@ -114,10 +114,16 @@ html,body{overflow-x:hidden}
       <div class="rrow"><input class="rin" id="url" type="url" inputmode="url" placeholder="유튜브 · 틱톡 · 인스타 주소"><button type="button" class="rgo" id="paste">📋 붙여넣기</button></div>
       <button type="button" class="big pri" id="addUrl" style="background:#5b21b6">📌 담기</button>
     </div>
+    <div class="rbox">
+      <h3>📁 내 영상 파일 담기 <small style="font-weight:600;color:#64748b;font-size:.8rem">(휴대폰에 있는 · 내려받은 참고 영상)</small></h3>
+      <button type="button" class="big sec" id="addFile" style="margin-top:0">📁 영상 파일 고르기</button>
+      <p class="rhint">이 휴대폰 안에만 저장돼요. 🎬 영상 만들기에서 고르면 AI에게 보낼 때 <b>영상 파일이 같이 첨부</b>돼요 (1분 안팎 · 60MB 아래 권장).</p>
+    </div>
     <input class="rin" id="mFind" type="search" placeholder="🔍 내 레퍼런스에서 찾기" style="margin-bottom:10px">
     <div class="rres" id="mine"></div>
   </div>
 </section>
+<script src="bkkit.js"></script>
 <script src="ref.js"></script>
 </body>
 </html>

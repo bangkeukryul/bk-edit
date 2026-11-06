@@ -153,7 +153,7 @@ ${+sec >= 15 ? `- 한 장면이 ${sec}초로 길어요. 한 장면 안에서 2~4
 - 이미지 프롬프트: 영어 한 문단 · 반드시 이 스타일로 시작: "${look[1]}" · vertical 9:16, no text, no subtitles, no logos, no watermark · 이 장면의 한 순간(시작 장면).${T.vlook === 'real' ? '\n- 실사여야 해요: 동물 · 사람 · 장소가 진짜 사진처럼 보이게. 그림 · 만화 · 애니메이션 · 3D 느낌이 나는 단어(cute, cartoon, illustrated, stylized 등)는 쓰지 마.' : ''}
 - 영상 프롬프트: 영어 한두 문장 · 그 이미지에서 ${sec}초 동안 일어나는 움직임 · 카메라 움직임 1가지.
 - 실존 인물 · 실제 기관 로고 금지. 모든 장면에 같은 주인공 · 장소 묘사를 그대로 넣어 같은 인물로 보이게. 앞 장면이 끝난 모습에서 이어 시작.
-${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
+${pplRule()}${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
 ` : ''}■ 설정
 (영어 · 기준 이미지 프롬프트 — 주인공 · 장소 · 스타일 한 문단 · 맨 처음 한 번 만들어 모든 장면의 참고 이미지로 써요)
 ■ 장면 1
@@ -505,6 +505,7 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
     anime: ['✨ 애니메이션', 'bright anime-style animation, expressive, vivid colors'],
     cine: ['🎬 시네마틱', 'cinematic, dramatic lighting, rich contrast, slow camera movement'],
   };
+  if (!T.vppl) T.vppl = 'ko'; if (!T.vplace) T.vplace = 'ko';
   if (!T.vtool) T.vtool = 'flow'; if (!T.vlook || !T.vlookPicked) T.vlook = 'real';   /* 기본은 실사 */ if (!T.vsec) T.vsec = '8';
   if (!Array.isArray(T.vscenes)) T.vscenes = [];
   function segInfo() {      // 문장별 시간: 목소리가 있으면 실제 시간, 없으면 글자 수로 어림
@@ -554,6 +555,7 @@ ${look[1]}, vertical 9:16, no text, no letters, no subtitles, no logos, no water
 [한 편으로 이어지게 — 클립 ${g.length}개를 붙여 약 ${Math.round(g.reduce((a, x) => a + x.dur, 0))}초]
 - 이 장면들은 따로따로가 아니라 이어 붙여 하나의 짧은 영상이 돼. 기승전결이 있게 흐름을 짜 줘.
 - 주인공 · 장소 · 소품 설정: ${(T.vchar || '').trim() ? (T.vchar || '').trim() : '네가 이 이야기에 맞게 정해서 ■ 설정에 적어 줘'}. 모든 장면 프롬프트에 똑같은 묘사(나이 · 옷 · 머리 · 색 등)를 그대로 넣어 같은 인물 · 장소로 보이게.
+${pplRule()}
 - 장면 2부터는 앞 장면이 끝난 모습에서 자연스럽게 이어 시작하게 (같은 방향 · 같은 조명 · 이어지는 동작).
 
 [장면 목록]
@@ -614,8 +616,8 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
     }).join('');
   }
   $('tkVcards').addEventListener('click', async e => {
-    const c = e.target.closest('button[data-cp]'); if (c) { flash(c, await copy((T.vscenes[+c.dataset.cp] || {}).p || '')); return; }
-    const cs = e.target.closest('button[data-cps]'); if (cs) { const i = +cs.dataset.cps, g = groups()[i], sc = T.vscenes[i] || {}; flash(cs, await copy(`${sc.p || ''} The person speaks in Korean: "${(g ? g.lines.join(' ') : sc.l || '').replace(/"/g, "'")}"`)); return; }
+    const c = e.target.closest('button[data-cp]'); if (c) { flash(c, await copy(window.__bkeWithPre((T.vscenes[+c.dataset.cp] || {}).p || ''))); return; }
+    const cs = e.target.closest('button[data-cps]'); if (cs) { const i = +cs.dataset.cps, g = groups()[i], sc = T.vscenes[i] || {}; flash(cs, await copy(window.__bkeWithPre(`${sc.p || ''}`) + ` The person speaks in Korean: "${(g ? g.lines.join(' ') : sc.l || '').replace(/"/g, "'")}"`)); return; }
     const lf = e.target.closest('button[data-lf]');
     if (lf) {   // 다음 클립의 '시작 그림'(이미지 → 영상)으로 쓰기
       const g = groups()[+lf.dataset.lf], it = A.S.photos.find(p => p.id === (A.S.talkMap || [])[g.idx[0]]); if (!it || it.kind !== 'video') return;
@@ -662,7 +664,7 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   function renderSheet() {
     $('tkVsheetBox').hidden = !T.vsheet; $('tkVsheet').textContent = T.vsheet || '';
   }
-  $('tkVsheetCopy').addEventListener('click', async e => flash(e.target, await copy(T.vsheet || '')));
+  $('tkVsheetCopy').addEventListener('click', async e => flash(e.target, await copy(window.__bkeWithPre(T.vsheet || ''))));
   $('tkVchar').value = T.vchar || ''; $('tkVchar').addEventListener('input', () => { T.vchar = $('tkVchar').value; save(); });
   renderSheet();
 
@@ -779,6 +781,32 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   if ($('bkeSound')) $('bkeSound').addEventListener('click', e => { const b = e.target.closest('button[data-snd]'); if (!b) return; A.S.set.sound = b.dataset.snd; try { localStorage.setItem('bk-edit-video.v1', JSON.stringify(A.S.set)); } catch (er) { /* 무시 */ } renderSound(); prepClipAudio(); A.scheduleRebuild(0); });
   function renderSceneSum() { const el = $('bkeSceneSum'); if (!el) return; const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8'; el.innerHTML = `🎬 <b>${T.len}초 = ${sec}초 × ${n}장면</b> · 대본 약 ${LEN[T.len][0]}자`; }
   if ($('bkeSec')) $('bkeSec').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vsec = b.dataset.v; if (+T.vsec >= 15 && T.vtool !== 'kling') { T.vtool = 'kling'; toast('🎬 15 · 30초 장면은 Kling에 맞춰 요청서를 만들어요 (🎞 영상 클립 → 🛠 더 보기에서 바꿀 수 있어요)', 4000); } else if (+T.vsec <= 8 && T.vtool === 'kling') T.vtool = 'flow'; save(); $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderSceneSum(); renderVopts(); });
+  /* 🧑 등장인물 · 🏠 장소 — 기본 🇰🇷 한국인 · 한국 (Flow가 서양 사람으로 그리지 않게) */
+  function pplEn() {
+    if (T.vppl === 'ko') return 'All people are South Korean (Korean ethnicity, Korean facial features, natural Korean look), NOT Western, NOT Caucasian.';
+    if (T.vppl === 'custom' && (T.vpplTxt || '').trim()) return `People: ${T.vpplTxt.trim()}.`;
+    return '';
+  }
+  function placeEn() { return T.vplace === 'ko' ? 'Set in South Korea (Korean-style apartment, Korean street or Korean neighborhood).' : ''; }
+  window.__bkePre = () => [pplEn(), placeEn()].filter(Boolean).join(' ');
+  window.__bkeWithPre = txt => { const p = window.__bkePre(); txt = String(txt || ''); return p && txt && !txt.startsWith(p) ? p + ' ' + txt : txt; };
+  function pplRule() {
+    const a = [];
+    if (T.vppl === 'ko') a.push("- 등장인물: 모두 한국인이에요. ■ 설정 · 이미지 · 영상 프롬프트마다 'a Korean man / a Korean woman / a Korean grandmother'처럼 꼭 'Korean'을 넣어 줘. 외국인 · 서양인으로 그리지 말 것.");
+    else if (T.vppl === 'custom' && (T.vpplTxt || '').trim()) a.push(`- 등장인물: ${T.vpplTxt.trim()} — 프롬프트마다 이 인물 묘사를 그대로 넣어 줘.`);
+    if (T.vplace === 'ko') a.push('- 장소: 한국 (한국 아파트 · 한국 거리 · 한국 동네). 프롬프트에 Korean apartment / Korean street처럼 적어 줘.');
+    return a.length ? a.join('\n') + '\n' : '';
+  }
+  function renderPpl() {
+    const p = $('bkePpl'), q = $('bkePlace'), x = $('bkePplTxt'); if (!p) return;
+    p.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === T.vppl)));
+    if (q) q.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === T.vplace)));
+    if (x) { x.hidden = T.vppl !== 'custom'; if (document.activeElement !== x) x.value = T.vpplTxt || ''; }
+  }
+  if ($('bkePpl')) $('bkePpl').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vppl = b.dataset.v; save(); renderPpl(); if (T.vppl === 'custom') setTimeout(() => $('bkePplTxt').focus(), 50); });
+  if ($('bkePlace')) $('bkePlace').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vplace = b.dataset.v; save(); renderPpl(); });
+  if ($('bkePplTxt')) $('bkePplTxt').addEventListener('input', e => { T.vpplTxt = e.target.value; save(); });
+  renderPpl();
   /* 🎨 화면 스타일 (대본 탭) — 기본 📷 실사 */
   function renderLook() { const el = $('bkeLook'); if (!el) return; el.innerHTML = Object.entries(LOOKS).map(([k, t]) => `<button type="button" data-v="${k}" aria-pressed="${k === T.vlook}">${t[0]}</button>`).join(''); }
   if ($('bkeLook')) $('bkeLook').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vlook = b.dataset.v; T.vlookPicked = true; save(); renderLook(); renderVopts(); });

@@ -112,7 +112,12 @@
   });
   /* 🎞 참고 영상 (선택): 영상 + 모아보기 그림(장면 6장) · 링크 · 따라 할 점 → 요청서와 공유에 함께 */
   const REF = { files: [], sheet: null };
-  const WHAT = { hook: '첫 3초 후킹 방식', tone: '말투 · 말하는 리듬', pace: '장면이 바뀌는 빠르기', cap: '자막 모양 · 위치', flow: '구성 순서(흐름)' };
+  const KIT = window.BKKIT || {}, WHAT = KIT.REFTAG || {};
+  const MOVE = ['act', 'dance', 'face', 'gest', 'move', 'angle', 'cam', 'shot'];
+  function setWhat(on) { const el = $('bkeRefWhat'); if (el && KIT.whatHTML) el.innerHTML = KIT.whatHTML(on); }
+  function setLvl(v) { const el = $('bkeRefLvl'); if (el && KIT.REFLVL) el.innerHTML = KIT.REFLVL.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${k === v}">${l}</button>`).join(''); }
+  setWhat(['hook', 'flow', 'act', 'tone']); setLvl('similar');
+  if ($('bkeRefLvl')) $('bkeRefLvl').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) setLvl(b.dataset.v); });
   async function contact(f) {   // 참고 영상에서 장면 6장을 뽑아 한 장의 모아보기 그림으로 (ChatGPT처럼 영상을 못 보는 AI용)
     return new Promise(res => {
       const v = document.createElement('video'), u = URL.createObjectURL(f); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
@@ -133,33 +138,34 @@
     REF.files = vs; REF.sheet = await contact(vs[0]); showRef(); window.BKKIT && document.getElementById('bkeRef') && (document.getElementById('bkeRef').open = true);
   });
   if ($('bkeRefClear')) $('bkeRefClear').addEventListener('click', () => { REF.files = []; REF.sheet = null; showRef(); });
-  if ($('bkeRefWhat')) $('bkeRefWhat').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
+  if ($('bkeRefWhat')) $('bkeRefWhat').addEventListener('click', e => { const b = e.target.closest('button[data-w]'); if (!b) return; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
   window.__bkeRef = () => {
-    const link = ($('bkeRefLink') && $('bkeRefLink').value.trim()) || '';
+    const link = ($('bkeRefLink') && $('bkeRefLink').value.trim()) || '', note = ($('bkeRefNote') && $('bkeRefNote').value.trim()) || '';
     if (!REF.files.length && !link) return '';
     const rm = (window.__bkeRefMemo || '').trim();
-    const what = [...document.querySelectorAll('#bkeRefWhat button[aria-pressed=true]')].map(b => WHAT[b.dataset.v]).filter(Boolean);
-    return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 봐 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}${rm ? `- 내가 본 점: ${rm}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 형식 · 흐름만 비슷하게 하고, 문장 · 장면 · 내용은 내 자료로 새로 만들어 줘 (그대로 베끼지 말 것).`;
+    const on = [...document.querySelectorAll('#bkeRefWhat button[aria-pressed=true]')].map(b => b.dataset.w), what = on.map(k => (WHAT[k] || '').replace(/^[^\s가-힣A-Za-z0-9(]+\s/u, '')).filter(Boolean);
+    const lvl = (document.querySelector('#bkeRefLvl [aria-pressed=true]') || { dataset: {} }).dataset.v || 'similar', mv = on.some(k => MOVE.includes(k));
+    const L = { feel: '느낌 · 분위기만 참고해 줘.', similar: '고른 점들을 비슷하게 따라 해 줘.', max: '동작까지 최대한 비슷하게 — 참고 영상을 장면별로 나눠, 각 장면의 동작 · 춤 · 표정 · 손짓 · 카메라 각도 · 카메라 움직임을 초 단위로 아주 자세히 분석해서 우리 장면의 영상 프롬프트(영어)에 그대로 구체적으로 넣어 줘 (예: 0-2s: she raises her right arm, spins once, claps twice; camera slowly zooms in).' };
+    return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 꼭 처음부터 끝까지 보고 분석해 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}${rm ? `- 내가 본 점: ${rm}\n` : ''}${note ? `- 자세히: ${note}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 얼마나: ${L[lvl]}\n${mv ? '- 움직임 · 촬영: 영상 프롬프트마다 참고 영상의 동작 · 카메라를 구체적인 영어 동사로 적어 줘 (raises, spins, claps, leans, walks toward camera, close-up, tracking shot 등). "dancing"처럼 뭉뚱그리지 말 것.\n' : ''}- 인물 · 대사 · 내용은 내 자료와 설정(등장인물)으로 새로 만들어 줘. 장면 · 대사 · 음악을 그대로 베끼지 말 것.`;
   };
   window.__bkeRefFiles = () => REF.files.concat(REF.sheet ? [REF.sheet] : []);
   /* 🎯 참고 영상 (내 레퍼런스): 링크 · 따라 할 점 · 메모 → 「🎞 참고 영상」 칸 + 위 띠 */
-  const RMAP = { hook: 'hook', cap: 'cap', pace: 'pace', flow: 'flow' };
   function useRef(pk, fresh) {
-    if (!pk || !pk.url) return;
-    if ($('bkeRefLink')) $('bkeRefLink').value = pk.url;
-    const on = (pk.tags || []).map(t => RMAP[t]).filter(Boolean);
-    if (on.length) document.querySelectorAll('#bkeRefWhat button').forEach(b => b.setAttribute('aria-pressed', String(on.includes(b.dataset.v))));
-    const extra = (pk.tags || []).filter(t => !RMAP[t]).map(t => ({ music: '음악', len: '길이', thumb: '썸네일' }[t])).filter(Boolean);
-    window.__bkeRefMemo = [pk.title ? `「${pk.title}」` : '', extra.length ? `(${extra.join(' · ')}도 참고)` : '', pk.memo || ''].filter(Boolean).join(' ');
+    if (!pk || !(pk.url || pk.kind === 'file')) return;
+    if ($('bkeRefLink')) $('bkeRefLink').value = pk.url || '';
+    if ((pk.tags || []).length) setWhat(pk.tags);
+    if (pk.lvl) setLvl(pk.lvl);
+    window.__bkeRefMemo = [pk.title ? `「${pk.title}」` : '', pk.memo || ''].filter(Boolean).join(' ');
+    if (pk.kind === 'file' && KIT.refFile) KIT.refFile(pk.id).then(async f => { if (!f) return; REF.files = [f]; showRef(); REF.sheet = await contact(f); showRef(); });
     if (fresh && $('bkeRef')) $('bkeRef').open = true;
     showRefBar();
     if (fresh) { const t = document.createElement('div'); t.textContent = '🎯 참고 영상을 붙였어요 — 위 띠에서 ▶ 다시 볼 수 있어요'; t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 16px;border-radius:14px;font-weight:800;z-index:2147483000;max-width:90vw;text-align:center'; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
   }
-  function clearRef() { if ($('bkeRefLink')) $('bkeRefLink').value = ''; window.__bkeRefMemo = ''; }
+  function clearRef() { if ($('bkeRefLink')) $('bkeRefLink').value = ''; window.__bkeRefMemo = ''; REF.files = []; REF.sheet = null; showRef(); }
   function showRefBar() { if (window.BKKIT) window.BKKIT.refBar('video', [$('bkeStart'), document.querySelector('[data-panel="script"] .bke-src')], clearRef); }
   try {
     const pk = JSON.parse(localStorage.getItem('bkeRefPick') || 'null');
-    if (pk && pk.url && /[?&]ref=1/.test(location.search)) { localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname); if (window.BKKIT) window.BKKIT.refSet('video', pk); useRef(pk, true); }
+    if (pk && (pk.url || pk.kind === 'file') && /[?&]ref=1/.test(location.search)) { localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname); if (window.BKKIT) window.BKKIT.refSet('video', pk); useRef(pk, true); }
     else if (window.BKKIT && window.BKKIT.refGet('video')) useRef(window.BKKIT.refGet('video'), false);
   } catch (e) { /* 무시 */ }
   showFiles(); setTimeout(sync, 300); sync(); render();

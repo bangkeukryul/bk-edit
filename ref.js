@@ -6,8 +6,7 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const LS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
   const KEYNAME = 'bkYtKey', API = 'https://www.googleapis.com/youtube/v3/';
-  const TAGS = [['hook', '🪝 첫 3초 후킹'], ['cap', '💬 자막'], ['music', '🎵 음악'], ['len', '⏱ 길이'], ['pace', '✂️ 장면 빠르기'], ['flow', '🎬 구성'], ['thumb', '🖼 썸네일']];
-  const TAGTXT = Object.fromEntries(TAGS);
+  const KIT = window.BKKIT || {}, TAGTXT = KIT.REFTAG || {}, LVL = Object.fromEntries(KIT.REFLVL || []);
 
   /* ── 저장 (IndexedDB) ── */
   let dbp = null;
@@ -40,7 +39,7 @@
     if (/^https?:\/\//.test(u)) return { kind: 'web', url: u, id: 'web:' + u };
     return null;
   }
-  const BADGE = { yt: '▶ 유튜브', tt: '🎵 틱톡', ig: '📸 인스타', web: '🔗 링크' };
+  const BADGE = { yt: '▶ 유튜브', tt: '🎵 틱톡', ig: '📸 인스타', web: '🔗 링크', file: '📁 내 영상' };
 
   /* ── 탭 ── */
   document.querySelector('.rtabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if (b) tab(b.dataset.t); });
@@ -265,11 +264,11 @@
   }
   function card(v, saved, mine) {
     const meta = [v.views ? `<span class="vw">👀 ${views(v.views)}회</span>` : '', v.ch ? esc(v.ch) : '', v.date ? ymd(v.date) : ''].filter(Boolean).join(' · ');
-    const memo = mine && ((v.tags && v.tags.length) || v.memo) ? `<p class="memo">${(v.tags || []).map(t => `<span>${esc(TAGTXT[t] || t)}</span>`).join('')}${esc(v.memo || '')}</p>` : '';
-    const go = v.kind === 'yt' ? 'play' : 'open';
-    return `<div class="rv" data-id="${esc(v.id)}"><div class="th" data-a="${go}" role="button" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}${v.kind === 'yt' ? '<span class="pl">▶</span>' : ''}</div>
+    const memo = mine && ((v.tags && v.tags.length) || v.memo || v.lvl) ? `<p class="memo">${v.lvl && LVL[v.lvl] ? `<span style="background:#5b21b6;color:#fff">🎚 ${esc(LVL[v.lvl])}</span>` : ''}${(v.tags || []).map(t => `<span>${esc(TAGTXT[t] || t)}</span>`).join('')}${esc(v.memo || '')}</p>` : '';
+    const go = v.kind === 'yt' || v.kind === 'file' ? 'play' : 'open';
+    return `<div class="rv" data-id="${esc(v.id)}"><div class="th" data-a="${go}" role="button" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}${v.kind === 'yt' || v.kind === 'file' ? '<span class="pl">▶</span>' : ''}</div>
       <div style="min-width:0"><b data-a="${go}" role="button">${esc(v.title || v.url)}</b><small>${meta}</small>${st2(v)}
-      <div class="acts">${v.kind === 'yt' ? `<button type="button" data-a="play">▶ 보기</button><a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브</a>` : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
+      <div class="acts">${v.kind === 'yt' ? `<button type="button" data-a="play">▶ 보기</button><a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브</a>` : v.kind === 'file' ? '<button type="button" data-a="play">▶ 보기</button>' : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
       ${mine ? '<button type="button" data-a="memo">📝 메모</button><button type="button" data-a="make">🎬 이걸로 만들기 ▸</button><button type="button" class="red" data-a="del">🗑</button>'
         : `<button type="button" data-a="save" class="${saved ? 'on' : ''}">${saved ? '✅ 담았어요' : '📌 담기'}</button>`}</div></div>${memo}</div>`;
   }
@@ -284,28 +283,37 @@
     if (a === 'make') return make(v);
   }
   function play(v) {
+    if (v.kind === 'file') {
+      const u = v.file ? URL.createObjectURL(v.file) : '';
+      const s = sheet('▶ ' + esc((v.title || '').slice(0, 40)), u ? `<div class="player"><video src="${u}" controls playsinline autoplay style="position:absolute;inset:0;width:100%;height:100%;background:#000"></video></div>` : '<p>⚠️ 영상 파일을 찾지 못했어요</p>');
+      const d = s.box.parentNode, ob = new MutationObserver(() => { if (!d.isConnected) { URL.revokeObjectURL(u); ob.disconnect(); } }); ob.observe(document.body, { childList: true });
+      return s;
+    }
     const s = sheet('▶ ' + esc((v.title || '').slice(0, 40)), `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${esc(v.vid)}?playsinline=1&autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
       <p class="rhint">${v.views ? `👀 ${views(v.views)}회 · ` : ''}${esc(v.ch || '')}</p><a class="big sec" href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브 앱에서 보기</a>`);
     return s;
   }
   function memoSheet(v, fresh) {
     const s = sheet(fresh ? '📌 담았어요 — 무엇을 참고할까요?' : '📝 메모', `<span class="rlbl" style="margin-top:0">제목</span><input class="rin" id="mTitle" value="${esc(v.title || '')}" placeholder="이 영상 이름" style="margin-bottom:8px">
-      <div class="chips2" id="mTags">${TAGS.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${(v.tags || []).includes(k)}">${l}</button>`).join('')}</div>
-      <span class="rlbl">메모 (선택)</span><textarea class="rin" id="mTxt" rows="4" placeholder="예: 첫 장면에 결과부터 보여 줌 · 자막이 크고 노랑">${esc(v.memo || '')}</textarea>
+      <span class="rlbl">🎯 무엇을 따라 할까요? <small style="font-weight:600;color:#64748b">(여러 개 골라요)</small></span>
+      <div id="mTags">${KIT.whatHTML ? KIT.whatHTML(v.tags || []) : ''}</div>
+      <span class="rlbl">🎚 얼마나 비슷하게</span><div class="seg" id="mLvl">${(KIT.REFLVL || []).map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${(v.lvl || 'similar') === k}">${l}</button>`).join('')}</div>
+      <span class="rlbl">✍️ 자세히 적기 (선택)</span><textarea class="rin" id="mTxt" rows="4" placeholder="예: 0:03 손뼉 두 번 → 0:05 오른팔 들고 한 바퀴 · 첫 장면에 결과부터 · 자막이 크고 노랑">${esc(v.memo || '')}</textarea>
       <button type="button" class="big pri" id="mOk" style="background:#5b21b6">💾 저장</button>`);
-    s.box.querySelector('#mTags').addEventListener('click', e => { const b = e.target.closest('button'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
+    s.box.querySelector('#mTags').addEventListener('click', e => { const b = e.target.closest('button[data-w]'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
+    s.box.querySelector('#mLvl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) s.box.querySelectorAll('#mLvl button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
     s.box.querySelector('#mOk').addEventListener('click', async () => {
-      v.tags = [...s.box.querySelectorAll('#mTags [aria-pressed=true]')].map(b => b.dataset.k); v.memo = s.box.querySelector('#mTxt').value.trim(); v.title = s.box.querySelector('#mTitle').value.trim() || v.title; await put(v); s.close(); toast('💾 저장했어요'); if (!$('tMine').hidden) drawMine();
+      v.tags = [...s.box.querySelectorAll('#mTags [aria-pressed=true]')].map(b => b.dataset.w); v.lvl = (s.box.querySelector('#mLvl [aria-pressed=true]') || {}).dataset ? s.box.querySelector('#mLvl [aria-pressed=true]').dataset.v : 'similar'; v.memo = s.box.querySelector('#mTxt').value.trim(); v.title = s.box.querySelector('#mTitle').value.trim() || v.title; await put(v); s.close(); toast('💾 저장했어요'); if (!$('tMine').hidden) drawMine();
     });
   }
   function make(v) {
-    const s = sheet('🎬 어디에서 참고할까요?', `<p class="rhint" style="margin:0 0 8px">${esc(v.title || v.url)}</p>
+    const s = sheet('🎬 어디에서 참고할까요?', `<p class="rhint" style="margin:0 0 8px">${esc(v.title || v.url || '')}</p>
       <button type="button" class="big pri" data-go="shorts/edit.html" style="background:linear-gradient(135deg,#ec4899,#f97316)">🎵 쇼츠 만들기에서 참고</button>
       <button type="button" class="big pri" data-go="video/" style="background:linear-gradient(135deg,#0ea5e9,#0d9488)">🎬 영상 만들기에서 참고 (AI 요청서에 들어가요)</button>
       <p class="rhint">고른 곳 맨 위에 「🎯 참고 영상」 띠가 생겨요. ➕ 자료 넣기 → 🎯 내 레퍼런스에서도 고를 수 있어요.</p>`);
     s.box.addEventListener('click', e => {
       const b = e.target.closest('[data-go]'); if (!b) return;
-      LS('bkeRefPick', JSON.stringify({ id: v.id, url: v.url, kind: v.kind, vid: v.vid, title: v.title || '', thumb: v.thumb || '', views: v.views || 0, ch: v.ch || '', tags: v.tags || [], memo: v.memo || '', at: Date.now() }));
+      LS('bkeRefPick', JSON.stringify({ id: v.id, url: v.url || '', kind: v.kind, vid: v.vid, title: v.title || '', thumb: v.thumb || '', views: v.views || 0, ch: v.ch || '', tags: v.tags || [], lvl: v.lvl || '', memo: v.memo || '', at: Date.now() }));
       location.href = b.dataset.go + '?ref=1';
     });
   }
@@ -338,6 +346,31 @@
     } catch (e) { /* 정보 없이 담기 */ }
     if (!r.title) r.title = BADGE[p.kind] + ' 영상';
     await put(r); $('url').value = ''; $('addUrl').disabled = false; await drawMine(); memoSheet(r, true);
+  });
+  /* 📁 내 영상 파일 담기 (내 휴대폰에 있는 · 내려받아 둔 참고 영상) — 이 휴대폰 안에만 저장 */
+  function frame(f) {
+    return new Promise(res => {
+      const v = document.createElement('video'), u = URL.createObjectURL(f); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
+      const fin = r => { URL.revokeObjectURL(u); res(r); }; setTimeout(() => fin({}), 8000);
+      v.onloadedmetadata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 3); };
+      v.onseeked = () => { try { const w = 240, h = Math.round(w * (v.videoHeight || 16) / (v.videoWidth || 9)), c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(v, 0, 0, w, h); fin({ thumb: c.toDataURL('image/jpeg', .7), sec: Math.round(v.duration || 0) }); } catch (e) { fin({ sec: Math.round(v.duration || 0) }); } };
+      v.onerror = () => fin({});
+    });
+  }
+  $('addFile').addEventListener('click', () => {
+    const i = document.createElement('input'); i.type = 'file'; i.accept = 'video/*'; i.multiple = true;
+    i.onchange = async () => {
+      const fs = Array.from(i.files || []).filter(f => /^video/.test(f.type) || /\.(mp4|mov|m4v|webm)$/i.test(f.name)); if (!fs.length) return;
+      if (fs.some(f => f.size > 60 * 1048576)) toast('⚠️ 60MB 넘는 영상은 AI에게 보낼 때 안 갈 수 있어요 · 짧게 잘라 넣으면 좋아요', 3500);
+      let last = null;
+      for (const [n, f] of fs.entries()) {
+        const fr = await frame(f);
+        last = { id: 'file:' + Date.now() + '_' + n, kind: 'file', url: '', title: f.name.replace(/\.\w+$/, ''), file: f, sec: fr.sec || 0, thumb: fr.thumb || '', at: Date.now() + n, tags: [], memo: '', lvl: 'similar' };
+        await put(last);
+      }
+      await drawMine(); toast(`📁 내 영상 ${fs.length}개를 담았어요`); if (fs.length === 1) memoSheet(last, true);
+    };
+    i.click();
   });
   count();
   if (/[?&]t=mine/.test(location.search)) tab('mine');

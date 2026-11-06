@@ -76,6 +76,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
 html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:100%}.panel .field>.seg button{overflow:hidden;text-overflow:ellipsis}
 .pk-row{box-sizing:border-box;max-width:100%;overflow:hidden;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #dbe3ef;border-radius:14px;padding:6px 8px 6px 12px;margin:6px 0}.pk-t{font-weight:900;white-space:nowrap}.pk-v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#0f766e}
 .pk-b{flex:none;min-height:42px;padding:0 12px;border-radius:12px;border:0;background:#0d9488;color:#fff;font-weight:900}
+#bkeRefWhat .bkk-wg>span{color:#0f766e}#bkeRefWhat .bkk-wg button[aria-pressed=true]{background:#0d9488;border-color:#0d9488}#bkeRefWhat .bkk-wg button{border-color:#99f6e4;color:#0f766e}
 .bkk #bkeMusicPick .builtin,.bkk #presets,.bkk #bkeLook{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 </head>
@@ -135,6 +136,9 @@ html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:1
         <p class="hint" id="bkeSceneSum"></p>
         <span class="lbl" hidden>🎨 화면 스타일</span>
         <div class="chips" id="bkeLook"></div>
+        <span class="lbl">🧑 등장인물</span><div class="seg" id="bkePpl"><button type="button" data-v="ko">🇰🇷 한국인</button><button type="button" data-v="any">상관없음</button><button type="button" data-v="custom">✍️ 직접</button></div>
+        <input type="text" id="bkePplTxt" hidden placeholder="예: 한국 할머니와 손녀 (영어로 쓰면 더 정확해요)">
+        <span class="lbl">🏠 장소</span><div class="seg" id="bkePlace"><button type="button" data-v="ko">🇰🇷 한국 집 · 거리</button><button type="button" data-v="any">상관없음</button></div>
         <div hidden><div id="tkTopics"></div><input type="text" id="tkCh"><input type="text" id="tkOpen"><input type="text" id="tkSrc"><input type="checkbox" id="tkEnd"></div>
       </div>
       <div class="group">
@@ -143,7 +147,9 @@ html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:1
           <div class="admin-2"><button type="button" class="ghost small" id="bkeRefAdd">🎞 참고 영상 넣기</button><button type="button" class="ghost small" id="bkeRefClear">🗑 빼기</button></div>
           <div class="field col"><label for="bkeRefLink">유튜브 · 인스타 링크 <small>(선택)</small></label><input type="text" id="bkeRefLink" placeholder="https://youtube.com/shorts/…"></div>
           <span class="lbl">어떤 점을 따라 할까요?</span>
-          <div class="chips" id="bkeRefWhat"><button type="button" data-v="hook" aria-pressed="true">첫 3초 후킹</button><button type="button" data-v="tone" aria-pressed="true">말투</button><button type="button" data-v="pace" aria-pressed="false">장면 바뀌는 빠르기</button><button type="button" data-v="cap" aria-pressed="false">자막 모양</button><button type="button" data-v="flow" aria-pressed="true">구성 순서</button></div>
+          <div id="bkeRefWhat"></div>
+          <span class="lbl">🎚 얼마나 비슷하게</span><div class="seg" id="bkeRefLvl"></div>
+          <div class="field col"><label for="bkeRefNote">✍️ 자세히 적기 <small>(선택 · 예: 0:03 손뼉 두 번 → 0:05 오른팔 들고 한 바퀴)</small></label><textarea id="bkeRefNote" rows="2"></textarea></div>
           <p class="hint">💡 참고 영상은 <b>Gemini</b>가 가장 잘 봐요. 다른 사람 영상은 <b>형식만 참고</b>하고 문장 · 장면은 새로 만들어요.</p>
         </details>
         <h3>🤖 AI에게 대본 · 장면 받기</h3>
