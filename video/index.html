@@ -73,13 +73,13 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
 </style>
 </head>
 <body>
-<script>document.body.classList.add('bke-pre')</script>
+<script>document.body.classList.add('bke-pre');(function(){var KEEP=['vtool','vlook','vlookPicked','vsec','len'];try{if(!/[?&]bkereset=/.test(location.search))return;var k='bk-edit-video-talk.v1',o={};try{var t=JSON.parse(localStorage.getItem(k)||'{}');KEEP.forEach(function(x){if(t[x]!=null)o[x]=t[x]})}catch(e){}localStorage.setItem(k,JSON.stringify(o));['bkeCopyIdx','bkeCopied'].forEach(function(x){localStorage.removeItem(x)});Object.keys(localStorage).filter(function(x){return x.indexOf('bkdraft:bk-edit/video')===0}).forEach(function(x){localStorage.removeItem(x)});try{indexedDB.deleteDatabase('bk-editapp-video')}catch(e){}history.replaceState(null,'',location.pathname)}catch(e){}})();</script>
   <script>window.BK_PROG="studio";</script><script src="../license.js"></script>
 <div class="app">
   <header class="top bke-top">
     <a class="bke-back" href="../" aria-label="BK에딧으로">←</a>
     <div class="brand"><h1>🎬 영상 만들기</h1><em class="bke-tag">1차 편집</em></div>
-    <details class="bke-menu"><summary aria-label="메뉴">⋮</summary><div><a href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a><button type="button" id="bkeToStart">➕ 자료 넣기 화면으로</button></div></details>
+    <details class="bke-menu"><summary aria-label="메뉴">⋮</summary><div><a href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a><button type="button" id="bkeToStart">➕ 자료 넣기 화면으로</button><button type="button" class="bke-reset" style="color:#dc2626">🔄 새로 시작 (지금 작업 모두 지우기)</button></div></details>
     <button id="installBtn" class="ghost small" hidden>앱 설치</button>
   </header>
 
@@ -92,6 +92,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
     <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 내 파일 · 내 보관함 · ✍️ 글</small></button>
     <div class="bke-pend" id="bkePend" hidden></div>
     <button type="button" class="bke-done" id="bkeDone" disabled>✅ 선택 완료 → 편집하기<small id="bkeInfo">➕ 자료 넣기로 사진 · 기사 · 글을 넣어 주세요</small></button>
+    <button type="button" class="bke-skip bke-reset" style="margin-bottom:8px;background:#fff1f2;color:#be123c">🔄 새로 시작 (예전 주제 · 자료 · 대본 · 장면 모두 지우기)</button>
     <button type="button" class="bke-skip" id="bkeSkip">▶ 자료 없이 바로 편집 화면으로 (이어서 하기)</button>
   </section>
 
@@ -116,7 +117,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
     <section class="panel" data-panel="script">
       <div class="panel-head"><h2>📝 대본 · 장면</h2><p>넣은 자료를 보고 AI에게 <b>장면별 대사 · 화면 · 영상 프롬프트</b>를 받아요.</p></div>
       <div class="group bke-src">
-        <div class="bke-topicline"><span id="bkeTopicNow">주제</span><button type="button" class="ghost small" id="bkeTopicChange">바꾸기</button></div>
+        <div class="bke-topicline"><span id="bkeTopicNow">주제</span><button type="button" class="ghost small" id="bkeTopicChange">바꾸기</button><button type="button" class="ghost small bke-reset" style="color:#be123c">🔄 새로 시작</button></div>
         <h3>📎 넣은 자료</h3>
         <div class="bke-files" id="bkeFiles"></div>
         <div class="field col"><label for="tkMemo">자료 메모 <small>(선택 · 기사 글 붙여넣기, 강조할 점)</small></label><textarea id="tkMemo" rows="4" class="tk-sm" placeholder="캡처 사진은 AI 앱에서 📎로 같이 첨부해요."></textarea></div>

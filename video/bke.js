@@ -87,6 +87,14 @@
     const tab = document.querySelector('.tabbar [data-tab="script"]'); if (tab) setTimeout(() => tab.click(), 250);
   });
   $('bkeSkip').addEventListener('click', () => start(false));
+  /* 🔄 새로 시작: 예전 주제 · 자료 · 대본 · AI 답 · 장면 · 장면 사진 · 복사 표시를 한 번에 지우기 (화면 스타일 · 장면 길이 · 분량 설정과 📥 보관함 · 라이선스는 그대로) */
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.bke-reset'); if (!b) return;
+    const m = b.closest('details'); if (m) m.open = false;
+    if (!confirm('🔄 새로 시작할까요?\n\n지워지는 것: 주제 · 넣은 자료 · 자료 메모 · AI 답 · 대본 · 장면 카드 · 장면 사진 · 넣은 영상 · 목소리\n그대로인 것: 📥 보관함 · 화면 스타일 · 장면 길이 · 라이선스\n\n필요한 대본은 먼저 복사해 두세요.')) return;
+    window.__bkeResetting = true;
+    location.replace(location.pathname + '?bkereset=' + Date.now());
+  });
   $('bkeToStart').addEventListener('click', e => { e.target.closest('details').open = false; start(true); });
   // 대본 칸에도 🎤 말로 쓰기
   if (window.BKKIT) [['tkAns', '말한 대본이 한 줄씩 써져요'], ['tkMemo', '말한 내용이 자료 메모로 써져요']].forEach(([id, tip]) => {

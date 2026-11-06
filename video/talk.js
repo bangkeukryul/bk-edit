@@ -63,7 +63,7 @@
   let T;
   try { T = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { T = Object.assign({}, DEF); }
   let saveT = 0;
-  const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(T)); } catch (e) { /* 저장 불가 */ } }, 250); };
+  const save = () => { clearTimeout(saveT); if (window.__bkeResetting) return; saveT = setTimeout(() => { if (window.__bkeResetting) return; try { localStorage.setItem(KEY, JSON.stringify(T)); } catch (e) { /* 저장 불가 */ } }, 250); };
   /* BK에딧: 채널 이름 · 첫 인사 · 출처는 1차 편집에서 쓰지 않아요 (유튜브에 올릴 때 따로) */
   const P = () => ({ ch: '', open: '', src: '' });
   T.end = false;
