@@ -1093,7 +1093,8 @@ function show(id) { ['notAdmin', 'consentPage', 'home', 'editor'].forEach(k => {
 function boot() {
   if (g.BKLIC && g.BKLIC.INAPP) { $('inapp').hidden = false; $('inappBtn').addEventListener('click', () => { if (!g.BKLIC.openChrome('')) alert('오른쪽 위 메뉴에서 「다른 브라우저로 열기」를 눌러 주세요'); }); }
   if (!g.BKE_ADMIN) { show('notAdmin'); return; }
-  if (!g.BKE_AGREED || !g.BKTERMS.saved()) { show('consentPage'); g.BKTERMS.ask($('consentBox')).then(() => location.reload()); return; }
+  let just = false; try { const c = JSON.parse(localStorage.getItem('bkEditConsent') || 'null'); just = !!(c && c.ts && Date.now() - c.ts < 120000); } catch (e) { /* 무시 */ }
+  if (!just && (!g.BKE_AGREED || !g.BKTERMS.saved())) { show('consentPage'); g.BKTERMS.ask($('consentBox')).then(() => location.reload()); return; }   // 방금 동의했으면 다시 묻지 않음
   show('home'); renderList();
   try { history.replaceState({ home: 0 }, ''); history.pushState({ home: 1 }, ''); } catch (e) { /* 무시 */ }
   const op = new URLSearchParams(location.search).get('open');   // 1차 편집에서 넘어온 영상 바로 열기
