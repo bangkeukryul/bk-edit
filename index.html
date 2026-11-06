@@ -51,6 +51,19 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
     <button type="button" class="big sec" id="reSend">💬 약관 동의 확인 글 다시 보내기</button>
     <button type="button" class="big sec" id="showTerms">📜 이용약관 보기</button>
     <p class="muted small">☁️ 구글 드라이브 백업: 버튼 → 공유 화면에서 <b>Drive</b> → <b>BK백업</b> 폴더 고르기 → 업로드.</p>
+    <details class="vbk"><summary>💾 앱 버전 백업 · 관리용 주소</summary>
+      <p class="muted small">지금 버전: <b id="adminVer">…</b><br>지금 사이트에 올라가 있는 <b>BK에딧 파일 전체</b>(맨 위 · shorts · video 폴더)를 날짜가 붙은 압축파일 하나로 저장해요. <b>새 파일을 올리기 전에 꼭 한 번</b> 눌러 두세요.</p>
+      <label class="ck"><input type="checkbox" id="backupDrive"> ☁️ 바로 구글 드라이브로 보내기 (공유 화면)</label>
+      <button type="button" class="big pri" id="backupBtn">💾 지금 버전 백업하기</button>
+      <p class="small" id="backupMsg"></p>
+      <h4>🔗 관리용 주소 (누르면 복사)</h4>
+      <button type="button" class="big sec" data-copy="all">📋 관리용 주소 전체 복사 (카톡 「나와의 채팅」에 저장)</button>
+      <div class="two"><button type="button" class="big sec" data-copy="root">① 맨 위 올리기</button><button type="button" class="big sec" data-copy="shorts">② shorts 올리기</button></div>
+      <button type="button" class="big sec" data-copy="video">③ video 폴더 올리기 주소</button>
+      <p class="small" id="adminCopyMsg"></p>
+      <div class="note"><b>🚑 업데이트 후 문제가 생기면 (되돌리기)</b><br>1. 내 파일 → 다운로드에서 문제 생기기 전 날짜의 <b>BK에딧_백업_날짜.zip</b>을 길게 눌러 <b>압축 풀기</b><br>2. 맨 위 파일은 ①, <b>shorts</b> 폴더 안 파일은 ②, <b>video</b> 폴더 안 파일은 ③ 주소에서 choose your files → 모두 선택 → <b>Commit changes</b><br>3. 1~2분 뒤 앱을 닫았다가 두 번 열기</div>
+      <button type="button" class="big sec" id="adminOff">🙈 이 휴대폰에서 관리자 메뉴 숨기기</button>
+    </details>
   </div>
 </section>
 
@@ -117,8 +130,8 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
 <div class="busy" id="busy" hidden><div><div class="spin"></div><p id="busyMsg">잠시만요…</p><div class="bar"><i id="busyBar"></i></div><button type="button" class="sec" id="busyCancel" hidden>그만하기</button></div></div>
 <div class="toast" id="toast" hidden></div>
 
-<footer class="foot" id="bkFoot">BK에딧 · BK Agent
-<!--BKVER--><style>.bkv{text-align:center;margin:0 0 18px;font-size:.82rem;color:#64748b;line-height:1.6}.bkv>.bkv-n{display:inline-block;padding:3px 12px;border-radius:999px;background:#fff;border:1.5px solid #0d948833;color:#0d9488;font-weight:800}.bkv-ok{color:#15803d;font-weight:800;margin-left:6px}.bkv-warn{display:block;color:#b45309;font-weight:800;margin-top:4px}#bkVerUp{display:block;width:auto!important;margin:8px auto 0!important;padding:10px 16px!important;border-radius:12px!important;border:0!important;background:#0d9488!important;color:#fff!important;font-weight:800!important;font-size:.92rem!important}#bkVerLog{text-align:left;margin:12px auto 0;max-width:640px;background:#fff;border:2px dashed #f59e0b;border-radius:14px;padding:10px 14px;color:#334155}#bkVerLog summary{cursor:pointer;font-weight:800;color:#92400e}.bkv-e{border-top:1px solid #f1f5f9;padding:8px 0 2px;margin-top:8px}.bkv-e b{color:#0d9488}.bkv-e span{color:#94a3b8;font-size:.78rem}.bkv-e ul{margin:4px 0 0;padding-left:18px}.bkv-e li{margin:2px 0}.bkv-new b{background:#fef3c7;padding:0 6px;border-radius:6px}</style><div class="bkv" id="bkVer"><span class="bkv-n">BK에딧 v2 · 2026.11.06</span><span id="bkVerSt"></span><details id="bkVerLog" hidden></details></div><script>(function(){var V={"v": "2", "prefix": "bk-editapp-", "always": false, "log": [["2", "2026.11.06", ["🏠 첫 화면 순서 · 이름: ✂️ 편집하기 → 🎵 쇼츠 만들기 → 🎬 영상 만들기", "🎵 쇼츠 만들기 · 🎬 영상 만들기를 BK에딧 안에 따로 (1차 편집) — BK쇼츠 · BK영상 앱과 저장 공간도 따로라 서로 덮어쓰지 않아요", "🎵 쇼츠 만들기 시작: ① 사진 · 동영상 먼저 넣기 → ② 어떤 영상 → 「✅ 선택 완료 → 편집하기」", "✂️ 1차 편집 다 하면 「최종 편집하러 가기」 → BK에딧 편집하기로 바로 (다시 보내면 「영상만 바꾸기」 · 효과 · 글자는 그대로)", "✨ 효과: 🔤 글자 13가지 · 😀 스티커 · 화면 효과 · 🎨 색감 · 🔀 장면 전환 · 🔔 효과음 · 🫥 모자이크 (화면에서 끌어 옮기기)", "🎙 더빙 화면: 위에 영상 · 구간 막대 · 가운데 대본(노랗게 표시) · 영상과 녹음이 같이 시작 · 녹음 당기기 보정", "🔉 목소리 나올 때 다른 소리: 그대로 · 줄이기 · 끄기 · 영상 소리 전부 끄기", "◁ 뒤로 가기 · ← : 고친 것이 있으면 「저장하고 나가기 / 저장 안 하고 나가기 / 계속 편집」 물어보기 · 첫 화면에서는 「끌까요?」"]], ["1", "2026.11.06", ["🛠 BK에딧 처음 만듦 (관리자 미리보기) — 🎵 노래 쇼츠 · 🎙 목소리 영상 · ✂️ 자유 편집을 한 앱에서", "📜 이용약관 동의 화면 — 모두 동의 · [필수] 이용약관 · [필수] 동의 기록 보관 · 확인 코드 · 💬 동의 확인 글 보내기", "✂️ 자유 편집: 크고 단순한 화면 · 아래 큰 버튼(분할 · 자르기 · 삭제 · 소리 분리 · 오디오 · 글자) · 되돌리기", "🔊 영상 소리 분리 · 🎧 소리 추출(WAV 저장) · 🎙 녹음(대본 띄우기) · 🎵 음악 넣기", "📂 내 프로젝트 여러 개 · 🗑 휴지통 · 💾 백업 파일(.bkedit) 저장 · 열기 · ☁️ 구글 드라이브로 백업", "📱 화면 비율 바로 바꾸기(세로 · 가로 · 정사각) · 💾 MP4 영상 만들기"]]]};
+<footer class="foot" id="bkFoot"><span class="footName">BK에딧 · BK Agent</span>
+<!--BKVER--><style>.bkv{text-align:center;margin:0 0 18px;font-size:.82rem;color:#64748b;line-height:1.6}.bkv>.bkv-n{display:inline-block;padding:3px 12px;border-radius:999px;background:#fff;border:1.5px solid #0d948833;color:#0d9488;font-weight:800}.bkv-ok{color:#15803d;font-weight:800;margin-left:6px}.bkv-warn{display:block;color:#b45309;font-weight:800;margin-top:4px}#bkVerUp{display:block;width:auto!important;margin:8px auto 0!important;padding:10px 16px!important;border-radius:12px!important;border:0!important;background:#0d9488!important;color:#fff!important;font-weight:800!important;font-size:.92rem!important}#bkVerLog{text-align:left;margin:12px auto 0;max-width:640px;background:#fff;border:2px dashed #f59e0b;border-radius:14px;padding:10px 14px;color:#334155}#bkVerLog summary{cursor:pointer;font-weight:800;color:#92400e}.bkv-e{border-top:1px solid #f1f5f9;padding:8px 0 2px;margin-top:8px}.bkv-e b{color:#0d9488}.bkv-e span{color:#94a3b8;font-size:.78rem}.bkv-e ul{margin:4px 0 0;padding-left:18px}.bkv-e li{margin:2px 0}.bkv-new b{background:#fef3c7;padding:0 6px;border-radius:6px}</style><div class="bkv" id="bkVer"><span class="bkv-n">BK에딧 v3 · 2026.11.06</span><span id="bkVerSt"></span><details id="bkVerLog" hidden></details></div><script>(function(){var V={"v": "3", "prefix": "bk-editapp-", "always": false, "log": [["3", "2026.11.06", ["🛠 관리자 메뉴에 💾 지금 버전 백업하기 — 사이트에 올라간 BK에딧 파일 전체(맨 위 · shorts · video)를 날짜 붙은 zip으로 저장 · 구글 드라이브로 바로 보내기 · 되돌리는 방법 안내", "🔗 관리용 주소(올리기 주소 3개 · 저장소 · 관리자 켜기) 누르면 복사", "맨 아래 「BK에딧 · BK Agent」를 3초 안에 7번 누르면 관리자 메뉴 켜기 · 끄기"]], ["2", "2026.11.06", ["🏠 첫 화면 순서 · 이름: ✂️ 편집하기 → 🎵 쇼츠 만들기 → 🎬 영상 만들기", "🎵 쇼츠 만들기 · 🎬 영상 만들기를 BK에딧 안에 따로 (1차 편집) — BK쇼츠 · BK영상 앱과 저장 공간도 따로라 서로 덮어쓰지 않아요", "🎵 쇼츠 만들기 시작: ① 사진 · 동영상 먼저 넣기 → ② 어떤 영상 → 「✅ 선택 완료 → 편집하기」", "✂️ 1차 편집 다 하면 「최종 편집하러 가기」 → BK에딧 편집하기로 바로 (다시 보내면 「영상만 바꾸기」 · 효과 · 글자는 그대로)", "✨ 효과: 🔤 글자 13가지 · 😀 스티커 · 화면 효과 · 🎨 색감 · 🔀 장면 전환 · 🔔 효과음 · 🫥 모자이크 (화면에서 끌어 옮기기)", "🎙 더빙 화면: 위에 영상 · 구간 막대 · 가운데 대본(노랗게 표시) · 영상과 녹음이 같이 시작 · 녹음 당기기 보정", "🔉 목소리 나올 때 다른 소리: 그대로 · 줄이기 · 끄기 · 영상 소리 전부 끄기", "◁ 뒤로 가기 · ← : 고친 것이 있으면 「저장하고 나가기 / 저장 안 하고 나가기 / 계속 편집」 물어보기 · 첫 화면에서는 「끌까요?」"]], ["1", "2026.11.06", ["🛠 BK에딧 처음 만듦 (관리자 미리보기) — 🎵 노래 쇼츠 · 🎙 목소리 영상 · ✂️ 자유 편집을 한 앱에서", "📜 이용약관 동의 화면 — 모두 동의 · [필수] 이용약관 · [필수] 동의 기록 보관 · 확인 코드 · 💬 동의 확인 글 보내기", "✂️ 자유 편집: 크고 단순한 화면 · 아래 큰 버튼(분할 · 자르기 · 삭제 · 소리 분리 · 오디오 · 글자) · 되돌리기", "🔊 영상 소리 분리 · 🎧 소리 추출(WAV 저장) · 🎙 녹음(대본 띄우기) · 🎵 음악 넣기", "📂 내 프로젝트 여러 개 · 🗑 휴지통 · 💾 백업 파일(.bkedit) 저장 · 열기 · ☁️ 구글 드라이브로 백업", "📱 화면 비율 바로 바꾸기(세로 · 가로 · 정사각) · 💾 MP4 영상 만들기"]]]};
 function $(i){return document.getElementById(i)}
 var adm=function(){try{return V.always||localStorage.getItem('bkAdmin')==='1'}catch(e){return !!V.always}};
 var box=$('bkVer'),st=$('bkVerSt'),lg=$('bkVerLog');
@@ -144,5 +157,6 @@ fetch('sw.js?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.t
 <script>window.BKE_BASE="";</script>
 <script src="fx.js"></script>
 <script src="edit.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>
