@@ -50,12 +50,12 @@
   const key = () => (LS(KEYNAME) || '').trim();
   const showKey = on => { $('keyBox').hidden = !on; };
   showKey(!key());
-  $('keySave').addEventListener('click', () => { const k = $('keyIn').value.trim(); if (!/^AIza[\w-]{20,}$/.test(k)) return alert('키 모양이 달라요. 「AIza」로 시작하는 키를 그대로 붙여넣어 주세요.'); LS(KEYNAME, k); $('keyIn').value = ''; showKey(false); toast('🔑 저장했어요 (이 휴대폰에만)'); });
+  $('keySave').addEventListener('click', () => { const k = $('keyIn').value.trim(); if (!/^AIza[\w-]{20,}$/.test(k)) return alert('키 모양이 달라요. 「AIza」로 시작하는 키를 그대로 붙여넣어 주세요.'); LS(KEYNAME, k); $('keyIn').value = ''; quota(0); showKey(false); toast('🔑 저장했어요 (이 휴대폰에만)'); });
   $('keyEdit').addEventListener('click', () => { showKey($('keyBox').hidden); if (!$('keyBox').hidden) $('keyBox').scrollIntoView({ behavior: 'smooth' }); });
 
   /* ── 고르기 (기억) ── */
-  const OPT = Object.assign({ sLen: 'short', sWhen: '365', sMin: '1000000', sOrd: 'viewCount' }, JSON.parse(LS('bkRefOpt') || '{}'));
-  ['sLen', 'sWhen', 'sMin', 'sOrd'].forEach(id => {
+  const OPT = Object.assign({ sLen: 'short', sWhen: '365', sMin: '1000000', sOrd: 'viewCount', sNat: 'ko' }, JSON.parse(LS('bkRefOpt') || '{}'));
+  ['sLen', 'sWhen', 'sMin', 'sOrd', 'sNat'].forEach(id => {
     const box = $(id), set = v => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
     set(OPT[id]); box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; OPT[id] = b.dataset.v; set(b.dataset.v); LS('bkRefOpt', JSON.stringify(OPT)); });
   });
@@ -67,7 +67,8 @@
   const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });   // 구글은 미국 서부 자정(한국 오후 4~5시)에 다시 채워요
   function quota(add, full) {
     let q = {}; try { q = JSON.parse(LS('bkRefQuota') || '{}'); } catch (e) { /* 없음 */ }
-    if (q.d !== today()) q = { d: today(), u: 0, n: 0 };
+    const kid = key().slice(-6);
+    if (q.d !== today() || (q.k || '') !== kid) q = { d: today(), u: 0, n: 0, k: kid };   // 날이 바뀌거나 키를 바꾸면 10,000점부터
     if (add) { q.u += add; if (add >= 100) q.n = (q.n || 0) + 1; }
     if (full) q.u = Math.max(q.u, DAY);
     if (add || full) LS('bkRefQuota', JSON.stringify(q));
@@ -107,19 +108,24 @@
   async function details(ids) {   // 조회수 · 길이 (1점)
     if (!ids.length) return [];
     const j = await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 }); quota(1);   // 구글이 받아 준 뒤에만 세기
-    return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
+    return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, lang: (v.snippet.defaultAudioLanguage || v.snippet.defaultLanguage || '').toLowerCase(), desc: (v.snippet.description || '').slice(0, 200), date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
   }
   async function onePage() {   // 검색 1번 (100점) → 조건에 맞는 것만
-    const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd, regionCode: 'KR', relevanceLanguage: 'ko', safeSearch: 'moderate' };
+    const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd, safeSearch: 'moderate' };
+    if (OPT.sNat === 'ko') { p.regionCode = 'KR'; p.relevanceLanguage = 'ko'; }
     if (OPT.sLen === 'short') p.videoDuration = 'short';
     if (+OPT.sWhen) p.publishedAfter = new Date(Date.now() - OPT.sWhen * 864e5).toISOString();
     if (NEXT) p.pageToken = NEXT;
     const j = await api('search', p); quota(100); NEXT = j.nextPageToken || '';   // 키 잠금 등으로 막히면 점수를 세지 않아요
     const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
-    const list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)));
+    const list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)) && natOk(v));
+    list.forEach(v => { delete v.desc; });
     if (OPT.sOrd === 'viewCount') list.sort((a, b) => b.views - a.views);
     RES = RES.concat(list);
   }
+  /* 🌏 나라: 영상 말 정보(ko) 또는 제목에 한글이 있으면 한국 영상으로 봐요 */
+  const isKo = v => /^ko/.test(v.lang || '') || /[가-힣]/.test(v.title || '') || (!v.lang && /[가-힣]{4,}/.test(v.desc || ''));
+  const natOk = v => OPT.sNat === 'ko' ? isKo(v) : OPT.sNat === 'foreign' ? !isKo(v) : true;
   async function search(more) {
     if (busy) return; const q = $('q').value.trim();
     if (!more && !q) { $('q').focus(); return; }
