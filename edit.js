@@ -995,14 +995,16 @@ async function renderList() {
   let all = []; try { all = await IDB.all('p'); } catch (e) { /* 없음 */ }
   const want = LISTTAB === 'trash', list = all.filter(r => !!r.trash === want).sort((a, b) => (b.at || 0) - (a.at || 0));
   const day = t => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  $('projList').innerHTML = list.map(r => `<div class="pc" data-id="${esc(r.id)}"><div class="th" style="${r.cover ? `background-image:url(${r.cover})` : ''}"><i>${fmtS(r.dur || 0)}</i></div>
+  const card = r => `<div class="pc" data-id="${esc(r.id)}"><div class="th" style="${r.cover ? `background-image:url(${r.cover})` : ''}"><i>${fmtS(r.dur || 0)}</i></div>
     <div><h3>${esc(r.name)}</h3><p>${want ? '🗑 버린 날 ' + day(r.trashedAt || r.at) : '최근 수정 ' + day(r.at)}</p><div class="acts">
     ${want ? '<button type="button" class="pri" data-a="restore">↩ 되살리기</button><button type="button" class="red" data-a="kill">완전히 지우기</button>'
-      : '<button type="button" class="pri" data-a="open">✏️ 열기</button><button type="button" data-a="bk">☁️ 백업</button><button type="button" data-a="ren">이름</button><button type="button" class="red" data-a="trash">🗑</button>'}</div></div></div>`).join('')
+      : '<button type="button" class="pri" data-a="open">✏️ 열기</button><button type="button" data-a="bk">☁️ 백업</button><button type="button" data-a="ren">이름</button><button type="button" class="red" data-a="trash">🗑</button>'}</div></div></div>`;
+  const SHOW = 4, more = list.length - SHOW;
+  $('projList').innerHTML = (list.slice(0, SHOW).map(card).join('') + (more > 0 ? `<button type="button" class="pmore" id="pMore">📂 나머지 ${more}개 더 보기 ▸</button>` : ''))
     || `<div class="empty">${want ? '휴지통이 비어 있어요' : '아직 프로젝트가 없어요.<br>위의 <b>✂️ 자유 편집</b>을 눌러 시작해요.'}</div>`;
 }
 document.querySelector('.tabs2').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; LISTTAB = b.dataset.t; document.querySelectorAll('.tabs2 button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderList(); });
-$('projList').addEventListener('click', async e => {
+const projClick = async e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   const id = b.closest('.pc').dataset.id, rec = await IDB.get('p', id); if (!rec) return;
   const a = b.dataset.a;
@@ -1017,7 +1019,17 @@ $('projList').addEventListener('click', async e => {
     for (const m of rec.P.srcs || []) if (!used.has(m.id)) { try { await IDB.del('f', m.id); } catch (er) { /* 무시 */ } }
     await IDB.del('p', id); renderList(); toast('지웠어요');
   }
-});
+};
+$('projList').addEventListener('click', e => { if (e.target.closest('#pMore')) { moreList(); return; } projClick(e); });
+async function moreList() {
+  let all = []; try { all = await IDB.all('p'); } catch (e) { /* 없음 */ }
+  const want = LISTTAB === 'trash', list = all.filter(r => !!r.trash === want).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(4);
+  const day = t => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const b = sheet(`📂 ${want ? '휴지통' : '내 프로젝트'} 더 보기 (${list.length}개)`, `<input type="text" id="pFind" placeholder="🔍 이름으로 찾기" style="margin-bottom:8px"><div id="pMini">${list.map(r => `<div class="pc pmini" data-id="${esc(r.id)}" data-n="${esc(r.name)}"><div><b>${esc(r.name)}</b><small>${day(want ? (r.trashedAt || r.at) : r.at)} · ${fmtS(r.dur || 0)}</small></div>
+    ${want ? '<button type="button" class="pri" data-a="restore">↩ 되살리기</button><button type="button" class="red" data-a="kill">🗑</button>' : '<button type="button" class="pri" data-a="open">✏️ 열기</button><button type="button" class="red" data-a="trash">🗑</button>'}</div>`).join('')}</div>`);
+  b.querySelector('#pFind').addEventListener('input', e => { const q = e.target.value.trim(); b.querySelectorAll('.pmini').forEach(x => { x.hidden = !!q && !x.dataset.n.includes(q); }); });
+  b.addEventListener('click', async e => { const x = e.target.closest('button[data-a]'); if (!x) return; closeSheet(); await projClick(e); });
+}
 $('newFree').addEventListener('click', () => openProject(null));
 $('driveAll').addEventListener('click', backupAll);
 $('openBackup').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openBackup(f); });

@@ -18,6 +18,7 @@
       dim.addEventListener('click', e => { if (e.target.closest('[data-x="close"]') || e.target === dim) { close(); return; } if (e.target.closest('button') && box.contains(e.target)) setTimeout(close, o.keepOpen ? 99999 : 250); });
       box.addEventListener('change', () => setTimeout(close, 400), { once: true });
     });
+    box.addEventListener('click', e => { if (dim && e.target.closest('button')) setTimeout(close, 250); }, true);   // 버튼을 다시 그려도 닫히게
     upd(); setTimeout(upd, 800); setInterval(() => { if (!dim) upd(); }, 1500);
   }
   const pressed = id => { const b = document.querySelector(`#${id} [aria-pressed="true"]`); return b ? b.textContent.trim() : ''; };

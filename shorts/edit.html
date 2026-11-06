@@ -47,6 +47,10 @@ body.editing .tlw,body.editing .panel{background:#f3f6fb}body.editing .panel{max
 body.editing .tabs{padding:6px 6px calc(8px + env(safe-area-inset-bottom))}body.editing .tabs button{font-size:.86rem;font-weight:800;min-height:62px;color:#1f2937}
 body.editing .tabs button span{font-size:1.5rem}body.editing .tabs button[aria-pressed=true]{color:#0f766e;background:#ccfbf1}
 body.editing .fine button,body.editing .qbar button{min-height:44px}
+.pk-row{box-sizing:border-box;max-width:100%;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #dbe3ef;border-radius:14px;padding:6px 8px 6px 12px;margin:8px 0}.pk-t{font-weight:900;white-space:nowrap}.pk-v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#0f766e}
+.pk-b{flex:none;min-height:44px;padding:0 12px;border-radius:12px;border:0;background:#0d9488;color:#fff;font-weight:900}
+.bkk .pchips{flex-wrap:wrap;overflow:visible}.bkk .pchips button{flex:1 1 45%}.bkk #rChips{display:flex;flex-direction:column;gap:8px}.bkk #rChips button{min-height:52px;text-align:left}
+.rrow{display:block}html,body{overflow-x:hidden}
 </style>
 </head>
 <body>
@@ -114,6 +118,7 @@ body.editing .fine button,body.editing .qbar button{min-height:44px}
 <script src="../bkkit.js"></script>
 <script src="ed-ui.js"></script>
 <script src="../handoff.js"></script>
+<script src="pick.js"></script>
 <script>document.getElementById('edVer').textContent='2026.11.02';</script>
 </body>
 </html>
