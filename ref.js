@@ -59,7 +59,7 @@
   const moreOn = () => { $('moreOn').textContent = +OPT.sCh ? '켜짐' : ''; $('moreOn').hidden = !+OPT.sCh; };
   ['sLen', 'sWhen', 'sMin', 'sOrd', 'sNat', 'sCh'].forEach(id => {
     const box = $(id), set = v => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
-    SETS[id] = v => { OPT[id] = v; set(v); LS('bkRefOpt', JSON.stringify(OPT)); moreOn(); };
+    SETS[id] = v => { OPT[id] = v; set(v); LS('bkRefOpt', JSON.stringify(OPT)); moreOn(); if (id !== 'sWhen' && RAW.length && !busy) { refilter(); PG = 0; drawRes(); } };
     set(OPT[id]); box.addEventListener('click', e => { const b = e.target.closest('button'); if (b) SETS[id](b.dataset.v); });
   });
   moreOn(); if (+OPT.sCh) $('moreBox').open = true;
@@ -101,7 +101,7 @@
   }
 
   /* ── 유튜브 검색 ── */
-  let NEXT = '', LAST = '', SEEN = new Set(), busy = false, RES = [], PG = 0, INFO = '', ERR = '';
+  let NEXT = '', LAST = '', SEEN = new Set(), busy = false, RES = [], RAW = [], CUT = {}, PG = 0, ERR = '';
   const PER = 10;
   async function api(path, p) {
     const u = API + path + '?' + new URLSearchParams(Object.assign({ key: key() }, p)).toString();
@@ -129,13 +129,40 @@
     if (NEXT) p.pageToken = NEXT;
     const j = await api('search', p); quota(100); NEXT = j.nextPageToken || '';   // 키 잠금 등으로 막히면 점수를 세지 않아요
     const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
-    let list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)) && natOk(v));
-    list.forEach(v => { delete v.desc; v.daily = Math.round(v.views / Math.max(1, (Date.now() - new Date(v.date)) / 864e5)); });
-    await subs(list);
-    if (+OPT.sCh) list = list.filter(v => v.subs != null && v.subs <= +OPT.sCh);
+    const raw = await details(ids);
+    raw.forEach(v => { v.ko = isKo(v); delete v.desc; v.daily = Math.round(v.views / Math.max(1, (Date.now() - new Date(v.date)) / 864e5)); });
+    await subs(raw);
+    RAW = RAW.concat(raw); refilter();
+  }
+  /* 받은 영상(RAW)을 지금 조건으로 다시 거르기 — 유튜브에 다시 묻지 않아서 0점 · 뺀 까닭도 세어 둬요 */
+  function why(v) {
+    if (OPT.sLen === 'short' && !(v.sec > 0 && v.sec <= 180)) return 'len';
+    if (v.views < +OPT.sMin) return 'views';
+    if (!natOk(v)) return 'nat';
+    if (+OPT.sCh && !(v.subs != null && v.subs <= +OPT.sCh)) return 'ch';
+    return '';
+  }
+  function refilter() {
+    CUT = {}; const L = [];
+    RAW.forEach(v => { const w = why(v); if (w) CUT[w] = (CUT[w] || 0) + 1; else L.push(v); });
     const by = { viewCount: v => v.views, daily: v => v.daily, ratio: v => v.ratio || 0 }[OPT.sOrd];
-    if (by) list.sort((a, b) => by(b) - by(a));
-    RES = RES.concat(list);
+    if (by) L.sort((a, b) => by(b) - by(a));
+    RES = L;
+  }
+  const cutTxt = () => {
+    const N = { views: `👀 조회수 ${views(+OPT.sMin)} 미만`, nat: OPT.sNat === 'ko' ? '🌏 외국 영상' : '🌏 한국 영상', len: '📱 3분 넘는 영상', ch: `📺 구독자 ${views(+OPT.sCh)} 넘는(또는 비공개) 채널` };
+    return Object.entries(CUT).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${N[k]} ${n}개`).join(' · ');
+  };
+  function whyBox() {
+    if (!LAST || busy) return '';
+    if (!SEEN.size) return ERR ? '' : `<div class="why"><b>🔍 유튜브에 이 조건으로 찾은 영상이 없어요</b><p>검색어를 바꾸거나 (띄어쓰기 예: 「사자 원숭이」) 📅 기간을 넓혀 보세요.</p>${+OPT.sWhen && OPT.sWhen !== '0' ? '<button type="button" data-fix="when">📅 기간 「전체」로 다시 찾기 (100점)</button>' : ''}</div>`;
+    const fix = [];
+    if (CUT.views) fix.push(`<button type="button" data-fix="views">👀 조회수 「${+OPT.sMin > 100000 ? '10만' : '상관없음'}」으로 보기 (0점)</button>`);
+    if (CUT.nat) fix.push('<button type="button" data-fix="nat">🌏 나라 「모두」로 보기 (0점)</button>');
+    if (CUT.ch) fix.push('<button type="button" data-fix="ch">📺 채널 크기 「상관없음」으로 보기 (0점)</button>');
+    if (+OPT.sWhen && OPT.sWhen !== '0' && RES.length < 5) fix.push(`<button type="button" data-fix="when">📅 기간 「${OPT.sWhen === '7' ? '1달' : OPT.sWhen === '30' ? '1년' : '전체'}」로 다시 찾기 (100점)</button>`);
+    if (!RES.length) return `<div class="why"><b>🔍 유튜브에서 받은 ${RAW.length}개 중 조건에 맞는 게 없어요</b><p>뺀 영상: ${cutTxt()}</p>${fix.join('')}<p class="sm">👆 위에서 👀 조회수 · 🌏 나라 · 📺 채널 크기 · ↕ 순서를 바꾸면 받은 영상에서 <b>바로 다시 걸러요 (0점)</b>. 📅 기간 · 검색어를 바꾸면 새로 찾아요 (100점).</p></div>`;
+    return `<p class="rhint" style="text-align:center">유튜브에서 받은 ${RAW.length}개 중 ${RES.length}개${Object.keys(CUT).length ? `<br>뺀 영상: ${cutTxt()}` : ''}</p>${RES.length < 5 && fix.length ? `<div class="why">${fix.join('')}</div>` : ''}`;
   }
   /* 📺 채널 구독자 수 (50개 채널에 1점) → 구독자 대비 몇 배 */
   async function subs(list) {
@@ -147,21 +174,20 @@
     } catch (e) { /* 구독자 수 없이 */ }
   }
   /* 🌏 나라: 영상 말 정보(ko) 또는 제목에 한글이 있으면 한국 영상으로 봐요 */
-  const isKo = v => /^ko/.test(v.lang || '') || /[가-힣]/.test(v.title || '') || (!v.lang && /[가-힣]{4,}/.test(v.desc || ''));
+  const isKo = v => v.ko != null ? v.ko : /^ko/.test(v.lang || '') || /[가-힣]/.test(v.title || '') || (!v.lang && /[가-힣]{4,}/.test(v.desc || ''));
   const natOk = v => OPT.sNat === 'ko' ? isKo(v) : OPT.sNat === 'foreign' ? !isKo(v) : true;
   async function search(more) {
     if (busy) return; const q = $('q').value.trim();
     if (!more && !q) { $('q').focus(); return; }
     if (!key()) { showKey(true); $('keyBox').scrollIntoView({ behavior: 'smooth' }); return toast('먼저 🔑 검색 키를 넣어 주세요'); }
     if (!(await canSpend())) return;
-    if (!more) { NEXT = ''; SEEN = new Set(); RES = []; PG = 0; LAST = q; }
+    if (!more) { NEXT = ''; SEEN = new Set(); RES = []; RAW = []; CUT = {}; PG = 0; LAST = q; }
     const before = RES.length; busy = true; ERR = ''; drawRes('🔎 찾는 중…');
     try {
       await onePage();
       if (RES.length - before < 5 && NEXT && quota(0) >= 200) { drawRes('🔎 조건에 맞는 영상이 적어서 한 번 더 찾는 중… (100점)'); await onePage(); }   // 한 번만 더
-      if (more && RES.length > before) PG = Math.floor(before / PER);
+      if (more && RES.length > before) toast(`⬇ ${RES.length - before}개 더 찾았어요`);
     } catch (e) { ERR = '⚠️ ' + e.message; }
-    INFO = SEEN.size ? `유튜브에서 받은 ${SEEN.size}개 중 조건에 맞는 ${RES.length}개` + (RES.length ? '' : ' — 최소 조회수 · 기간을 낮춰 보세요') : '';
     busy = false; drawRes();
   }
   function pager(n, pg) {
@@ -174,7 +200,7 @@
     const saved = new Set((await all()).map(r => r.id)), n = Math.max(1, Math.ceil(RES.length / PER)); if (PG >= n) PG = n - 1;
     box.innerHTML = (RES.length ? `<p class="rhint" style="text-align:center;margin:0">${PG * PER + 1}~${Math.min(RES.length, PG * PER + PER)}번째 · ${PG + 1}/${n}쪽</p>` : '')
       + RES.slice(PG * PER, PG * PER + PER).map(v => card(v, saved.has(v.id), false)).join('')
-      + pager(n, PG) + (ERR ? `<p class="rmsg" style="color:#dc2626">${esc(ERR)}</p>` : '') + (INFO ? `<p class="rhint" style="text-align:center">${esc(INFO)}</p>` : '')
+      + pager(n, PG) + (ERR ? `<p class="rmsg" style="color:#dc2626">${esc(ERR)}</p>` : '') + whyBox()
       + (NEXT && PG === n - 1 ? '<button type="button" class="rmore" id="rMore">⬇ 다음 50개 더 찾기 (100점)</button>' : '');
   }
   $('go').addEventListener('click', () => search(false));
@@ -182,6 +208,15 @@
   $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(false); } });
   $('res').addEventListener('click', e => {
     if (e.target.closest('#rMore')) { search(true); return; }
+    const fx = e.target.closest('[data-fix]');
+    if (fx) {
+      const k = fx.dataset.fix;
+      if (k === 'views') SETS.sMin(+OPT.sMin > 100000 ? '100000' : '0');
+      else if (k === 'nat') SETS.sNat('all');
+      else if (k === 'ch') SETS.sCh('0');
+      else if (k === 'when') { SETS.sWhen(OPT.sWhen === '7' ? '30' : OPT.sWhen === '30' ? '365' : '0'); search(false); return; }
+      toast('🔁 받은 영상에서 다시 걸렀어요 (0점)'); return;
+    }
     const pg = e.target.closest('[data-pg]'); if (pg) { PG = +pg.dataset.pg; drawRes(); $('res').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     act(e, false);
   });
