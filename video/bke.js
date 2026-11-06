@@ -93,8 +93,12 @@
     const m = b.closest('details'); if (m) m.open = false;
     if (!confirm('🔄 새로 시작할까요?\n\n지워지는 것: 주제 · 넣은 자료 · 자료 메모 · AI 답 · 대본 · 장면 카드 · 장면 사진 · 넣은 영상 · 목소리\n그대로인 것: 📥 보관함 · 화면 스타일 · 장면 길이 · 라이선스\n\n필요한 대본은 먼저 복사해 두세요.')) return;
     window.__bkeResetting = true;
+    const wipe = () => { try { Object.keys(localStorage).filter(x => x.indexOf('bkdraft:bk-edit/video') === 0).forEach(x => localStorage.removeItem(x)); } catch (er) { /* 무시 */ } };
+    document.querySelectorAll('textarea,input[type=text]').forEach(x => { x.value = ''; }); wipe(); window.addEventListener('pagehide', wipe);   // 나가며 저장되는 쓰던 내용까지 지우기
     location.replace(location.pathname + '?bkereset=' + Date.now());
   });
+  /* 🧹 자료 메모 지우기 */
+  if ($('tkMemoClr')) $('tkMemoClr').addEventListener('click', e => { e.preventDefault(); const m = $('tkMemo'); if (!m.value.trim() || !confirm('자료 메모를 모두 지울까요?')) return; m.value = ''; m.dispatchEvent(new Event('input', { bubbles: true })); });
   $('bkeToStart').addEventListener('click', e => { e.target.closest('details').open = false; start(true); });
   // 대본 칸에도 🎤 말로 쓰기
   if (window.BKKIT) [['tkAns', '말한 대본이 한 줄씩 써져요'], ['tkMemo', '말한 내용이 자료 메모로 써져요']].forEach(([id, tip]) => {
