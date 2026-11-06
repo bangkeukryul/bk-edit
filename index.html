@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&family=Jua&family=Gowun+Batang:wght@700&family=Nanum+Pen+Script&family=Gaegu:wght@700&family=Do+Hyeon&display=swap">
 <link rel="stylesheet" href="edit.css">
 <script>if('serviceWorker' in navigator){var _had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(_had&&!window._rl){window._rl=1;location.reload()}});window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'}).then(function(r){r.update()}).catch(function(){})})}</script>
 <script>/* 🛠 관리자 미리보기 · 약관에 동의한 뒤에만 라이선스 잠금(BK쇼츠 라이선스)을 확인해요. 약관 버전은 terms.js의 TERMS_VER와 같게 */
@@ -38,9 +38,9 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
   <header class="top"><div class="brand"><img src="icon-192.png" alt="" width="40" height="40"><h1>BK에딧</h1><em>🛠 관리자 미리보기</em></div><a class="ghost" href="/bk-shorts/">BK쇼츠</a></header>
   <p class="lead">무엇을 만들까요?</p>
   <div class="modes">
-    <a class="mode m1" href="/bk-shorts/edit.html"><span class="ic">🎵</span><b>노래 쇼츠</b><small>사진 + 노래 가사에 맞춰 쇼츠</small></a>
-    <a class="mode m2" href="/bk-studio/"><span class="ic">🎙</span><b>목소리 영상</b><small>대본 + 내 목소리 + 사진</small></a>
-    <button type="button" class="mode m3" id="newFree"><span class="ic">✂️</span><b>자유 편집</b><small>영상 · 사진을 넣고 자르고 붙이기</small></button>
+    <button type="button" class="mode m3" id="newFree"><span class="ic">✂️</span><b>편집하기</b><small>가지고 있는 영상 · 쇼츠를 자르고 붙여 다듬기 · 효과 · 글자 · 더빙</small></button>
+    <a class="mode m1" href="shorts/edit.html"><span class="ic">🎵</span><b>쇼츠 만들기</b><small>가지고 있는 사진 · 영상으로 노래 쇼츠 만들기 (1차 편집)</small></a>
+    <a class="mode m2" href="video/"><span class="ic">🎬</span><b>영상 만들기</b><small>기사 · 글 · 여러 자료를 넣어 목소리 영상 만들기 (1차 편집)</small></a>
   </div>
   <div class="tabs2"><button type="button" data-t="list" aria-pressed="true">📂 내 프로젝트</button><button type="button" data-t="trash" aria-pressed="false">🗑 휴지통</button></div>
   <div id="projList" class="plist"></div>
@@ -57,12 +57,12 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
 <!-- ✂️ 편집 화면 -->
 <section id="editor" class="page ed" hidden>
   <header class="etop">
-    <button type="button" class="ib" id="edClose" aria-label="닫기">✕</button>
+    <button type="button" class="ib" id="edClose" aria-label="내 프로젝트로">←</button>
     <button type="button" class="pname" id="edName">새 프로젝트</button>
     <button type="button" class="ratio" id="edRatio">9:16</button>
     <button type="button" class="exp" id="edExport">💾 만들기</button>
   </header>
-  <div class="stage"><canvas id="pv" width="360" height="640"></canvas></div>
+  <div class="stage" id="editorStage"><canvas id="pv" width="360" height="640"></canvas></div>
   <div class="ctrl">
     <span class="time"><b id="tNow">0:00.0</b> / <span id="tAll">0:00</span></span>
     <button type="button" class="play" id="edPlay" aria-label="재생">▶</button>
@@ -80,11 +80,35 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
     <button type="button" data-a="del" class="red"><span>🗑</span>삭제</button>
     <button type="button" data-a="sep"><span>🔊</span>소리 분리</button>
     <button type="button" data-a="audio"><span>🎵</span>오디오</button>
-    <button type="button" data-a="text"><span>🔤</span>글자</button>
+    <button type="button" data-a="fx"><span>✨</span>효과</button>
     <button type="button" data-a="more"><span>⚙️</span>더 보기</button>
   </nav>
   <input type="file" id="addFile" accept="image/*,video/*" multiple hidden>
   <input type="file" id="musFile" accept="audio/*,video/*" hidden>
+</section>
+
+<!-- 🎙 더빙 화면 -->
+<section id="dub" class="dub" hidden>
+  <header class="dtop"><button type="button" class="ib" data-x="close" aria-label="편집으로">←</button><b>🎙 더빙 (영상 보며 녹음)</b></header>
+  <div class="dstage" id="dubStage"></div>
+  <div class="dbar"><input type="range" id="dubPos" min="0" max="10" step="0.1" value="0" aria-label="녹음 위치"><div class="drow"><span id="dubRange"></span></div>
+    <div class="dbtn"><button type="button" data-x="start">▶ 여기서 시작</button><button type="button" data-x="end">■ 여기서 끝</button><button type="button" data-x="noend">끝 없음</button></div></div>
+  <div class="dscript" id="dubScript"></div>
+  <div class="dctl">
+    <button type="button" class="big rec" id="dubGo" data-x="go">● 녹음 시작 (3 · 2 · 1)</button>
+    <button type="button" class="big rec" id="dubStop" data-x="stop" hidden>■ 멈추고 넣기</button>
+    <div id="dubAfter" class="three" hidden><button type="button" data-x="listen">▶ 같이 들어보기</button><button type="button" data-x="again">🔄 다시 녹음</button><button type="button" data-x="ok" class="ok2">✅ 좋아요</button></div>
+    <details class="dset"><summary>⚙️ 대본 · 소리 설정</summary>
+      <button type="button" class="big sec" data-x="script">📜 대본 쓰기 / 고치기</button>
+      <div id="dubTxtBox" hidden><textarea id="dubTxt" placeholder="읽을 대본을 줄마다 써 넣으세요"></textarea></div>
+      <h4>대본 넘어가는 빠르기</h4><div class="chips" id="dubSpd"></div>
+      <h4>녹음하는 동안 영상 원래 소리 <small>(이어폰을 끼면 가장 깨끗해요)</small></h4><div class="chips" id="dubMon"></div>
+      <h4>넣은 뒤, 목소리 나올 때 다른 소리(영상 · 음악)</h4><div class="chips" id="dubDuck"></div>
+      <div id="dubLvRow"><h4>줄이는 정도</h4><div class="chips" id="dubLv"></div></div>
+      <h4>⏱ 녹음 당기기 (휴대폰은 녹음이 조금 늦게 들어가요)</h4><div class="chips" id="dubLat"></div>
+    </details>
+  </div>
+  <div class="dcd" id="dubCd" hidden></div>
 </section>
 
 <!-- 아래에서 올라오는 판 -->
@@ -94,7 +118,7 @@ window.BKE_ADMIN=a;window.BKE_AGREED=!!(c&&c.ver==='1');if(a&&window.BKE_AGREED)
 <div class="toast" id="toast" hidden></div>
 
 <footer class="foot" id="bkFoot">BK에딧 · BK Agent
-<!--BKVER--><style>.bkv{text-align:center;margin:0 0 18px;font-size:.82rem;color:#64748b;line-height:1.6}.bkv>.bkv-n{display:inline-block;padding:3px 12px;border-radius:999px;background:#fff;border:1.5px solid #0d948833;color:#0d9488;font-weight:800}.bkv-ok{color:#15803d;font-weight:800;margin-left:6px}.bkv-warn{display:block;color:#b45309;font-weight:800;margin-top:4px}#bkVerUp{display:block;width:auto!important;margin:8px auto 0!important;padding:10px 16px!important;border-radius:12px!important;border:0!important;background:#0d9488!important;color:#fff!important;font-weight:800!important;font-size:.92rem!important}#bkVerLog{text-align:left;margin:12px auto 0;max-width:640px;background:#fff;border:2px dashed #f59e0b;border-radius:14px;padding:10px 14px;color:#334155}#bkVerLog summary{cursor:pointer;font-weight:800;color:#92400e}.bkv-e{border-top:1px solid #f1f5f9;padding:8px 0 2px;margin-top:8px}.bkv-e b{color:#0d9488}.bkv-e span{color:#94a3b8;font-size:.78rem}.bkv-e ul{margin:4px 0 0;padding-left:18px}.bkv-e li{margin:2px 0}.bkv-new b{background:#fef3c7;padding:0 6px;border-radius:6px}</style><div class="bkv" id="bkVer"><span class="bkv-n">BK에딧 v1 · 2026.11.06</span><span id="bkVerSt"></span><details id="bkVerLog" hidden></details></div><script>(function(){var V={"v": "1", "prefix": "bk-editapp-", "always": false, "log": [["1", "2026.11.06", ["🛠 BK에딧 처음 만듦 (관리자 미리보기) — 🎵 노래 쇼츠 · 🎙 목소리 영상 · ✂️ 자유 편집을 한 앱에서", "📜 이용약관 동의 화면 — 모두 동의 · [필수] 이용약관 · [필수] 동의 기록 보관 · 확인 코드 · 💬 동의 확인 글 보내기", "✂️ 자유 편집: 크고 단순한 화면 · 아래 큰 버튼(분할 · 자르기 · 삭제 · 소리 분리 · 오디오 · 글자) · 되돌리기", "🔊 영상 소리 분리 · 🎧 소리 추출(WAV 저장) · 🎙 녹음(대본 띄우기) · 🎵 음악 넣기", "📂 내 프로젝트 여러 개 · 🗑 휴지통 · 💾 백업 파일(.bkedit) 저장 · 열기 · ☁️ 구글 드라이브로 백업", "📱 화면 비율 바로 바꾸기(세로 · 가로 · 정사각) · 💾 MP4 영상 만들기"]]]};
+<!--BKVER--><style>.bkv{text-align:center;margin:0 0 18px;font-size:.82rem;color:#64748b;line-height:1.6}.bkv>.bkv-n{display:inline-block;padding:3px 12px;border-radius:999px;background:#fff;border:1.5px solid #0d948833;color:#0d9488;font-weight:800}.bkv-ok{color:#15803d;font-weight:800;margin-left:6px}.bkv-warn{display:block;color:#b45309;font-weight:800;margin-top:4px}#bkVerUp{display:block;width:auto!important;margin:8px auto 0!important;padding:10px 16px!important;border-radius:12px!important;border:0!important;background:#0d9488!important;color:#fff!important;font-weight:800!important;font-size:.92rem!important}#bkVerLog{text-align:left;margin:12px auto 0;max-width:640px;background:#fff;border:2px dashed #f59e0b;border-radius:14px;padding:10px 14px;color:#334155}#bkVerLog summary{cursor:pointer;font-weight:800;color:#92400e}.bkv-e{border-top:1px solid #f1f5f9;padding:8px 0 2px;margin-top:8px}.bkv-e b{color:#0d9488}.bkv-e span{color:#94a3b8;font-size:.78rem}.bkv-e ul{margin:4px 0 0;padding-left:18px}.bkv-e li{margin:2px 0}.bkv-new b{background:#fef3c7;padding:0 6px;border-radius:6px}</style><div class="bkv" id="bkVer"><span class="bkv-n">BK에딧 v2 · 2026.11.06</span><span id="bkVerSt"></span><details id="bkVerLog" hidden></details></div><script>(function(){var V={"v": "2", "prefix": "bk-editapp-", "always": false, "log": [["2", "2026.11.06", ["🏠 첫 화면 순서 · 이름: ✂️ 편집하기 → 🎵 쇼츠 만들기 → 🎬 영상 만들기", "🎵 쇼츠 만들기 · 🎬 영상 만들기를 BK에딧 안에 따로 (1차 편집) — BK쇼츠 · BK영상 앱과 저장 공간도 따로라 서로 덮어쓰지 않아요", "🎵 쇼츠 만들기 시작: ① 사진 · 동영상 먼저 넣기 → ② 어떤 영상 → 「✅ 선택 완료 → 편집하기」", "✂️ 1차 편집 다 하면 「최종 편집하러 가기」 → BK에딧 편집하기로 바로 (다시 보내면 「영상만 바꾸기」 · 효과 · 글자는 그대로)", "✨ 효과: 🔤 글자 13가지 · 😀 스티커 · 화면 효과 · 🎨 색감 · 🔀 장면 전환 · 🔔 효과음 · 🫥 모자이크 (화면에서 끌어 옮기기)", "🎙 더빙 화면: 위에 영상 · 구간 막대 · 가운데 대본(노랗게 표시) · 영상과 녹음이 같이 시작 · 녹음 당기기 보정", "🔉 목소리 나올 때 다른 소리: 그대로 · 줄이기 · 끄기 · 영상 소리 전부 끄기", "◁ 뒤로 가기 · ← : 고친 것이 있으면 「저장하고 나가기 / 저장 안 하고 나가기 / 계속 편집」 물어보기 · 첫 화면에서는 「끌까요?」"]], ["1", "2026.11.06", ["🛠 BK에딧 처음 만듦 (관리자 미리보기) — 🎵 노래 쇼츠 · 🎙 목소리 영상 · ✂️ 자유 편집을 한 앱에서", "📜 이용약관 동의 화면 — 모두 동의 · [필수] 이용약관 · [필수] 동의 기록 보관 · 확인 코드 · 💬 동의 확인 글 보내기", "✂️ 자유 편집: 크고 단순한 화면 · 아래 큰 버튼(분할 · 자르기 · 삭제 · 소리 분리 · 오디오 · 글자) · 되돌리기", "🔊 영상 소리 분리 · 🎧 소리 추출(WAV 저장) · 🎙 녹음(대본 띄우기) · 🎵 음악 넣기", "📂 내 프로젝트 여러 개 · 🗑 휴지통 · 💾 백업 파일(.bkedit) 저장 · 열기 · ☁️ 구글 드라이브로 백업", "📱 화면 비율 바로 바꾸기(세로 · 가로 · 정사각) · 💾 MP4 영상 만들기"]]]};
 function $(i){return document.getElementById(i)}
 var adm=function(){try{return V.always||localStorage.getItem('bkAdmin')==='1'}catch(e){return !!V.always}};
 var box=$('bkVer'),st=$('bkVerSt'),lg=$('bkVerLog');
@@ -117,6 +141,8 @@ fetch('sw.js?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.t
 </footer>
 <script src="mp4mux.js"></script>
 <script src="terms.js"></script>
+<script>window.BKE_BASE="";</script>
+<script src="fx.js"></script>
 <script src="edit.js"></script>
 </body>
 </html>

@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BK에딧 · 영상 만들기</title>
+<meta name="description" content="대본 · 내 목소리 · AI 영상 장면으로 정보 · 뉴스 · 유머 쇼츠를 휴대폰에서 만드는 영상 제작실">
+<meta name="theme-color" content="#0f9488">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BK에딧">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>.bke-tag{font-style:normal;font-size:.72rem;background:#ccfbf1;color:#0f766e;border-radius:999px;padding:2px 8px;font-weight:800;margin-left:6px;white-space:nowrap}.bke-go{display:block;width:100%;margin-top:10px;background:linear-gradient(135deg,#14b8a6,#0e7490)!important;color:#fff!important;border:0!important;font-weight:900;min-height:54px;border-radius:14px}</style>
+</head>
+<body>
+  <script>window.BK_PROG="studio";</script><script src="../license.js"></script>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11z"/></svg>
+      <h1>🎬 영상 만들기</h1><em class="bke-tag">1차 편집 · BK에딧</em>
+    </div>
+    <div class="top-act"><a class="button ghost small bk-home" href="../">← BK에딧</a><a class="button ghost small" href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a>
+    <button id="installBtn" class="ghost small" hidden>앱 설치</button></div>
+  </header>
+
+  <section class="stage" aria-label="미리보기">
+    <div class="screen">
+      <canvas id="preview" width="540" height="960"></canvas>
+      <div class="screen-empty" id="screenEmpty"><p>📝 대본 → 🎙 목소리 → 🎬 장면 순서로<br>따라 하면 여기서 바로<br>미리 볼 수 있어요</p></div>
+      <div class="screen-busy" id="screenBusy" hidden><span class="spin"></span><span id="busyText">준비 중…</span></div>
+    </div>
+    <div class="transport">
+      <button id="playBtn" class="round" aria-label="재생" disabled>
+        <svg viewBox="0 0 24 24" class="i-play"><path d="M8 5v14l11-7z"/></svg>
+        <svg viewBox="0 0 24 24" class="i-pause" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <input type="range" id="scrub" min="0" max="10" step="0.05" value="0" aria-label="재생 위치" disabled>
+      <span id="timeLbl" class="tnum">0:00 / 0:00</span>
+    </div>
+  </section>
+
+  <main class="panels">
+    <!-- 📝 대본 -->
+    <section class="panel" data-panel="script">
+      <div class="panel-head"><h2>📝 대본</h2><p>소재와 분량을 고르고, AI에게 대본을 받아요. 직접 써도 돼요.</p></div>
+      <div class="group">
+        <h3>① 소재 · 분량</h3>
+        <div class="chips tk-topics" id="tkTopics"></div>
+        <div class="field"><span class="lbl">분량</span><div class="seg" id="tkLen"><button type="button" data-v="15">15초</button><button type="button" data-v="30">30초</button><button type="button" data-v="45">45초</button><button type="button" data-v="60">60초</button></div></div>
+        <p class="hint" id="tkLenInfo"></p>
+        <div class="field col"><label for="tkCh">채널 이름 <small>(영상 위 띠)</small></label><input type="text" id="tkCh" placeholder="예: 1분 정치 뉴스"></div>
+        <div class="field col"><label for="tkOpen">첫 인사 <small>(대본 첫 줄 · 비우면 바로 시작)</small></label><input type="text" id="tkOpen"></div>
+        <div class="field col"><label for="tkSrc">출처 <small>(영상 맨 아래)</small></label><input type="text" id="tkSrc" placeholder="예: 정책브리핑 www.korea.kr"></div>
+        <div class="field toggle"><label for="tkEnd">마지막 줄 ‘좋아요와 구독 부탁드려요!’</label><input type="checkbox" id="tkEnd" role="switch"></div>
+        <div class="field col"><label for="tkMemo">자료 메모 <small>(선택 · 기사 글 붙여넣기, 강조할 점)</small></label><textarea id="tkMemo" rows="4" class="tk-sm" placeholder="캡처 사진은 AI 앱에서 📎로 같이 첨부해요."></textarea></div>
+      </div>
+
+      <div class="group">
+        <h3>② AI로 대본 받기</h3>
+        <button type="button" class="primary block-s" id="tkReqBtn">🤖 AI 요청서 만들기</button>
+        <div id="tkReqBox" hidden>
+          <textarea id="tkReq" class="tk-sm" rows="7" readonly></textarea>
+          <div class="admin-2"><button type="button" class="primary small" id="tkReqCopy">📋 요청서 복사</button><a class="button ghost small" href="https://gemini.google.com/app" target="_blank" rel="noopener">✨ Gemini 열기</a></div>
+          <div class="admin-2"><a class="button ghost small" href="https://chatgpt.com/" target="_blank" rel="noopener">💬 ChatGPT 열기</a><a class="button ghost small" href="https://claude.ai/new" target="_blank" rel="noopener">🟠 Claude 열기</a></div>
+          <ol class="howto"><li><b>📋 요청서 복사</b> → AI 앱 열기</li><li>AI 입력칸 <b>📎(＋)</b>로 <b>캡처 사진</b>을 첨부하고 요청서를 붙여넣어 보내요.</li><li>AI 답을 <b>전체 복사</b>해서 아래 칸에 붙여넣고 <b>✨ 정리하기</b>.</li></ol>
+        </div>
+        <div class="field col"><label for="tkAns">AI 답 붙여넣기 <small>(대본만 직접 써도 돼요 · 한 줄 = 한 문장)</small></label><textarea id="tkAns" class="tk-sm" rows="5"></textarea></div>
+        <div class="admin-2"><button type="button" class="ghost small" id="tkPaste">📋 붙여넣기</button><button type="button" class="primary small" id="tkParse">✨ 정리하기</button></div>
+      </div>
+
+      <div class="group" id="tkScript">
+        <h3>③ 대본 확인</h3>
+        <div class="field col"><label for="tkTitle">제목</label><input type="text" id="tkTitle"></div>
+        <div class="field col"><label for="tkDisp">화면 자막 <small>(한 줄 = 한 장면)</small></label><textarea id="tkDisp" rows="8"></textarea><p class="hint" id="tkDispInfo"></p></div>
+        <div class="field col"><label for="tkRead">읽기용 대본 <small>(목소리용 · 숫자는 한글로 · 줄 수 똑같이)</small></label><textarea id="tkRead" rows="8"></textarea></div>
+        <div class="admin-2"><button type="button" class="primary small" id="tkCopyRead">📋 읽기용 대본 복사</button><button type="button" class="ghost small" id="tkSame">↔ 화면 자막과 똑같이</button></div>
+        <ul class="tk-check" id="tkCheck"></ul>
+      </div>
+
+      <button type="button" class="primary block next" data-go="voice">다음: 🎙 목소리 넣기 →</button>
+    </section>
+
+    <!-- 🎙 목소리 -->
+    <section class="panel" data-panel="voice" hidden>
+      <div class="panel-head"><h2>🎙 목소리</h2><p>내 PC가 학습한 <b>내 목소리</b>, 음성 파일, 직접 녹음 중 하나로 넣어요.</p></div>
+      <div class="group">
+        <h3>목소리 넣기</h3>
+        <div class="seg wide" id="tkVmode"><button type="button" data-v="pc">💻 내 PC 목소리</button><button type="button" data-v="file">🎧 음성 파일</button><button type="button" data-v="rec">🎤 직접 녹음</button></div>
+        <div id="tkV-pc" class="tk-v">
+          <p class="hint">PC의 <b>BK보이스</b>가 학습한 <b>내 목소리</b>로 읽어 줘요. (설치는 <a href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서</a>)</p>
+          <div class="field col"><label for="tkPc">PC 주소</label><input type="text" id="tkPc" inputmode="url" placeholder="예: 192.168.0.10:9870  또는  https://내PC.tail1234.ts.net"></div>
+          <div class="admin-2"><div class="field col" style="padding:0"><label for="tkPin">PIN 번호</label><input type="text" id="tkPin" inputmode="numeric" placeholder="4자리"></div>
+            <div class="field col" style="padding:0"><label for="tkSpeed">말 빠르기</label><select id="tkSpeed"><option value="0.9">조금 느리게</option><option value="1" selected>보통</option><option value="1.1">조금 빠르게</option><option value="1.2">빠르게</option></select></div></div>
+          <p class="hint" id="tkPcHint"></p>
+          <div class="admin-2"><button type="button" class="primary small" id="tkPcGo">🔊 PC로 내 목소리 만들기</button><button type="button" class="ghost small" id="tkPcTest">🔗 연결 확인</button></div>
+          <p class="hint" id="tkPcMsg"></p>
+        </div>
+        <div id="tkV-file" class="tk-v" hidden>
+          <label class="drop"><input type="file" id="tkFile" accept="audio/*,.wav,.mp3,.m4a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3z"/></svg><span>음성 파일 불러오기<small>BK보이스 · 타입캐스트 · 일레븐랩스 · 녹음 앱 (WAV · MP3 · M4A)</small></span></label>
+          <p class="hint">BK보이스 파일은 문장 시간이 들어 있어 자막이 딱 맞아요. 다른 파일은 <b>말이 쉬는 곳</b>을 찾아 대본 줄 수만큼 자동으로 나눠요.</p>
+        </div>
+        <div id="tkV-rec" class="tk-v" hidden>
+          <div class="tk-prompter" id="tkPrompt"></div>
+          <div class="tk-recrow"><button type="button" class="ghost" id="tkRecPrev">◀</button><button type="button" class="primary" id="tkRecBtn">⏺ 녹음</button><button type="button" class="ghost" id="tkRecPlay">▶ 듣기</button><button type="button" class="ghost" id="tkRecNext">▶▶</button></div>
+          <p class="hint" id="tkRecInfo"></p>
+          <button type="button" class="primary block-s" id="tkRecJoin" disabled>✅ 녹음 합쳐서 영상에 넣기</button>
+          <p class="hint">한 문장씩 녹음해요. 틀리면 그 문장만 <b>다시 녹음</b>하면 돼요.</p>
+        </div>
+        <div class="tk-narr" id="tkNarr" hidden>
+          <p id="tkNarrInfo"></p>
+          <audio id="tkAudio" controls></audio>
+          <div class="field toggle"><label for="tkNarrOn">영상에 목소리 · 자막 넣기</label><input type="checkbox" id="tkNarrOn" role="switch"></div>
+          <div class="field"><label for="tkGain">목소리 크기</label><input type="range" id="tkGain" min="0.5" max="2" step="0.1"><span></span></div>
+          <details><summary class="hint">문장별 시간 보기</summary><ol class="tk-segs" id="tkNarrSegs"></ol></details>
+          <div class="admin-2"><button type="button" class="ghost small" id="tkNarrSave">💾 목소리 파일 저장</button><button type="button" class="ghost small" id="tkNarrDel">🗑 목소리 빼기</button></div>
+          <p class="hint">목소리가 들어가면 <b>📝 대본의 화면 자막</b>이 목소리에 맞춰 나와요.</p>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>🧬 내 목소리 등록 <small>(PC 학습용 녹음 · 처음 한 번)</small></h3>
+        <p class="hint">조용한 방에서 휴대폰을 입에서 한 뼘(20~30cm) 떨어뜨리고, 영상에서 쓸 말투 그대로 또박또박 읽어요. <b>본인 목소리만</b> 등록하세요.</p>
+        <p class="tk-sub">❶ 기준 음성 (5~8초)</p>
+        <p class="tk-ref" id="tkRefText"></p>
+        <div class="admin-2"><button type="button" class="primary small" id="tkRefRec">⏺ 기준 음성 녹음</button><button type="button" class="ghost small" id="tkRefCopy">📋 문장 복사</button></div>
+        <p class="hint" id="tkRefMsg">위 문장 한 번만 읽고 ⏹. ‘BK보이스_기준음성.wav’로 저장돼요.</p>
+        <button type="button" class="ghost block-s" id="tkRefSend" hidden>💻 PC(BK보이스)로 바로 보내기</button>
+        <p class="tk-sub">❷ 학습용 녹음 (1~3분)</p>
+        <details><summary class="hint">읽을 문장 보기 (20문장 · 2번 읽으면 더 좋아요)</summary><ol class="tk-train" id="tkTrainList"></ol></details>
+        <button type="button" class="primary block-s" id="tkTrainRec">⏺ 학습용 녹음 시작</button>
+        <p class="hint" id="tkTrainMsg">문장 사이는 1초쯤 쉬어 주세요. 끝나면 ⏹ → ‘BK보이스_학습용_날짜.wav’로 저장돼요.</p>
+        <button type="button" class="ghost block-s" id="tkTrainSend" hidden>💻 PC(BK보이스)로 바로 보내기</button>
+        <p class="hint">PC로 옮기기: 카톡 ‘나와의 채팅’ · 구글 드라이브 · USB, 또는 PC의 BK보이스 화면 ⚙ 설정에서 올리기.</p>
+      </div>
+      <a class="button ghost tk-guide" href="/bk-studio/guide.html" target="_blank" rel="noopener">📖 설명서 — PC로 ‘내 목소리’ 만들기 · 외출 중 쓰기</a>
+      <button type="button" class="primary block next" data-go="scene">다음: 🎬 장면 넣기 →</button>
+    </section>
+
+    <!-- 🎬 장면 -->
+    <section class="panel" data-panel="scene" hidden>
+      <div class="panel-head"><h2>🎬 장면</h2><p>목소리가 나오는 동안 보일 화면이에요. 사진 · 캡처 · 영상 · 자동 배경 · AI 영상을 섞어 쓸 수 있어요.</p></div>
+      <div class="group">
+        <h3>📷 사진 · 영상</h3>
+        <div class="drop-row">
+          <label class="drop"><input type="file" id="photoInput" accept="image/*" multiple><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM6 17l4-5 3 3.5 2-2.5 3 4z"/></svg><span>사진 · 캡처<small>여러 장 가능</small></span></label>
+          <label class="drop"><input type="file" id="videoInput" accept="video/*" multiple><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11v12H4zM16 10l5-3v10l-5-3z"/></svg><span>영상<small>MP4 권장</small></span></label>
+        </div>
+        <button type="button" class="ghost block-s" id="tkBg">🖼 주제 배경 자동 만들기 (3장)</button>
+        <p class="hint" id="photoEmpty">문장마다 차례대로 장면이 바뀌어요. 아래 🎬 AI 영상 장면에서 장면마다 정해 줄 수도 있어요.</p>
+        <ol class="photo-grid" id="photoGrid"></ol>
+        <p class="hint">⚠️ 언론사 기사 화면 · 사진을 그대로 쓰면 저작권 문제가 될 수 있어요. 캡처는 <b>대본 재료</b>로 쓰고, 화면은 내 사진 · 자동 배경 · AI 영상 · 공공누리 자료를 권해요.</p>
+      </div>
+      <div class="group">
+        <h3>🎞 AI 영상 클립 이어 붙이기 <small>(선택 · Flow · Grok · Kling 등)</small></h3>
+        <p class="hint">영상 AI는 한 번에 6~10초 클립만 만들어요. 대본을 <b>클립 여러 개의 시나리오</b>로 나눠 만들고, BK영상이 <b>순서대로 이어 붙여</b> 30~60초 한 편으로 만들어요. 영상 AI에는 <b>소리 없는 장면</b>만 만들게 하고, 자막 · 내 목소리는 BK영상이 맞춰요.</p>
+        <div class="field col"><span class="lbl">쓸 영상 AI</span><div class="chips" id="tkVtool"></div></div>
+        <div class="field col"><span class="lbl">화면 스타일 <small>(모든 장면 통일)</small></span><div class="chips" id="tkVlook"></div></div>
+        <div class="field"><span class="lbl">장면 길이</span><div class="seg" id="tkVsec"><button type="button" data-v="0">한 문장</button><button type="button" data-v="6">6초</button><button type="button" data-v="8">8초</button><button type="button" data-v="10">10초</button></div></div>
+        <p class="hint" id="tkVinfo"></p>
+        <div class="field col"><label for="tkVchar">주인공 · 장소 설정 <small>(선택 · 모든 클립에 똑같이 · 비우면 AI가 정해요)</small></label><input type="text" id="tkVchar" placeholder="예: 30대 여성 직장인, 베이지 코트, 단발머리 / 작은 원룸"></div>
+        <button type="button" class="primary block-s" id="tkVreqBtn">🎬 클립 시나리오 · 장면별 프롬프트 요청서 만들기</button>
+        <div id="tkVreqBox" hidden>
+          <textarea id="tkVreq" class="tk-sm" rows="6" readonly></textarea>
+          <div class="admin-2"><button type="button" class="primary small" id="tkVreqCopy">📋 요청서 복사</button><a class="button ghost small" href="https://gemini.google.com/app" target="_blank" rel="noopener">✨ Gemini 열기</a></div>
+        </div>
+        <div class="field col"><label for="tkVans">AI 답 붙여넣기 <small>(■ 장면 1 / 프롬프트: …)</small></label><textarea id="tkVans" class="tk-sm" rows="4"></textarea></div>
+        <div class="admin-2"><button type="button" class="ghost small" id="tkVpaste">📋 붙여넣기</button><button type="button" class="primary small" id="tkVparse">✨ 장면 정리</button></div>
+        <div id="tkVsheetBox" class="tk-sheet" hidden><b>🧑‍🎨 설정 (모든 클립 공통)</b><p id="tkVsheet"></p><button type="button" class="ghost small" id="tkVsheetCopy">📋 설정 복사</button><span class="hint"> · Flow ‘재료(Ingredients)’ · Grok 참고 이미지를 만들 때 써요</span></div>
+        <a class="button ghost small tk-vopen" id="tkVopen" target="_blank" rel="noopener" hidden>↗ 영상 AI 열기</a>
+        <ol class="howto"><li>장면 카드의 <b>📋 프롬프트 복사</b> → 영상 AI에 붙여넣기 · <b>세로(9:16)</b> → 생성 · 다운로드 (8초 클립 × 여러 개)</li><li>장면이 자연스럽게 이어지게: 카드의 <b>📸 끝 장면 저장</b> → 다음 클립을 만들 때 영상 AI의 <b>‘이미지로 시작(시작 프레임)’</b>에 그 그림을 넣어요.</li><li>다 받았으면 <b>🎞 클립 여러 개 한꺼번에 넣기</b> (파일 이름 순서대로) 또는 카드마다 <b>🎬 넣기</b></li><li>클립을 이어 붙여 <b>목소리 길이(30~60초)</b>만큼 한 편이 돼요. 클립이 조금 짧으면 자동으로 살짝 느리게 늘려요. 영상 속 소리는 빠지고 내 목소리 · 자막이 나와요.</li></ol>
+        <label class="drop"><input type="file" id="tkVbulk" accept="video/*" multiple><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11v12H4zM16 10l5-3v10l-5-3z"/></svg><span>🎞 클립 여러 개 한꺼번에 넣기<small>파일 이름 순서대로 빈 장면부터 채워요 (예: 1.mp4 · 2.mp4 …)</small></span></label>
+        <div id="tkVcards" class="tk-vcards"></div>
+        <details class="tk-yt"><summary>🗣 내 얼굴이 말하는 영상 (립싱크 아바타)</summary>
+          <ol class="howto"><li><button type="button" class="ghost small" id="tkVsave">💾 내 목소리 파일 저장</button> (🎙 목소리 탭에서 넣은 목소리)</li>
+            <li>HeyGen · Hedra · Kling 아바타 등에서 <b>내 정면 사진 + 그 음성 파일</b>을 올려 ‘말하는 영상’을 만들어요.</li>
+            <li>받은 MP4를 아래에 넣으면 처음부터 끝까지 깔리고, 자막이 입 모양에 맞춰 나와요. (중간 장면은 위 카드에서 다른 영상으로 바꿀 수 있어요)</li></ol>
+          <label class="drop"><input type="file" id="tkAvatar" accept="video/*"><span>🗣 아바타 영상 넣기<small>내 목소리로 만든 립싱크 MP4</small></span></label>
+          <p class="hint">본인 사진 · 본인 목소리만 쓰세요. 실제 사람처럼 보이는 AI 영상은 올릴 때 ‘AI 생성’ 표시를 해 주세요.</p>
+        </details>
+      </div>
+
+      <button type="button" class="primary block next" data-go="style">다음: 🎨 꾸미기 →</button>
+    </section>
+
+    <!-- 🎨 꾸미기 -->
+    <section class="panel" data-panel="style" hidden>
+      <div class="panel-head"><h2>🎨 꾸미기</h2><p>자막 모양과 배경음악만 고르면 돼요.</p></div>
+      <div class="group">
+        <h3>자막 스타일</h3>
+        <div class="chips" id="presets" data-k="preset"></div>
+        <div class="field"><label for="size">글자 크기</label><input type="range" id="size" data-k="size" min="48" max="96" step="2"><output data-o="size"></output></div>
+        <div class="field"><span class="lbl">자막 위치</span><div class="seg" data-k="yPos"><button type="button" data-v="24">⬆ 위</button><button type="button" data-v="50">가운데</button><button type="button" data-v="74">⬇ 아래</button></div></div>
+        <div class="field toggle"><label for="showCh">위에 채널 이름 띠</label><input type="checkbox" id="showCh" data-k="showCh" role="switch"></div>
+        <div class="field toggle"><label for="showSrc">아래에 출처</label><input type="checkbox" id="showSrc" data-k="showSrc" role="switch"></div>
+        <p class="hint">채널 이름 · 출처 글자는 📝 대본 ①에서 바꿔요.</p>
+      </div>
+      <div class="group">
+        <h3>화면 움직임</h3>
+        <div class="field"><span class="lbl">장면 전환</span><div class="seg" data-k="trans"><button type="button" data-v="soft">부드럽게</button><button type="button" data-v="fast">빠르게</button><button type="button" data-v="fun">다양하게</button><button type="button" data-v="none">없음</button></div></div>
+        <div class="field"><span class="lbl">사진 움직임</span><div class="seg" data-k="motion"><button type="button" data-v="random">천천히 줌</button><button type="button" data-v="none">없음</button></div></div>
+      </div>
+      <div class="group">
+        <h3>🎵 배경음악 <small>(목소리 뒤에 작게 · 저작권 걱정 없는 기본 음악)</small></h3>
+        <p class="hint" id="musicNow" hidden><span id="musicName"></span> <button type="button" class="ghost small" id="musicRemove">빼기</button></p>
+        <div id="builtinList" class="builtin"></div>
+        <label class="drop"><input type="file" id="musicInput" accept="audio/*,.mp3,.m4a,.wav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3z"/></svg><span>내 음악 파일<small>MP3 · M4A · WAV</small></span></label>
+        <div class="field"><label for="talkBgm">배경음악 크기</label><input type="range" id="talkBgm" data-k="talkBgm" min="0" max="0.6" step="0.05"><output data-o="talkBgm"></output></div>
+      </div>
+      <button type="button" class="primary block next" data-go="make">다음: 📤 영상 만들기 →</button>
+    </section>
+
+    <!-- 📤 만들기 -->
+    <section class="panel" data-panel="make" hidden>
+      <div class="panel-head"><h2>📤 영상 만들기</h2></div>
+      <div class="warn" id="supportWarn" hidden></div>
+      <p class="hint make-warn" id="makeWarn"></p>
+      <dl class="stats big"><div><dt>영상 길이</dt><dd id="sumLen" class="tnum">–</dd></div><div><dt>장면</dt><dd id="sumScenes" class="tnum">–</dd></div><div><dt>자막</dt><dd id="sumSubs" class="tnum">–</dd></div></dl>
+      <div class="group">
+        <div class="field"><span class="lbl">해상도</span><div class="seg" data-k="res"><button type="button" data-v="1080">1080p</button><button type="button" data-v="720">720p (빠름)</button></div></div>
+        <div class="field toggle"><label for="hq">고화질 (파일이 커져요)</label><input type="checkbox" id="hq" data-k="hq" role="switch"></div>
+      </div>
+      <button class="primary block" id="exportBtn" type="button">🎬 영상 만들기</button>
+      <div class="progress" id="progress" hidden>
+        <div class="bar"><i id="progBar"></i></div>
+        <div class="prog-row"><span id="progText" class="tnum">준비 중…</span><button class="ghost small" id="cancelBtn" type="button">취소</button></div>
+        <p class="hint">만드는 동안 화면을 켜 두고, 다른 앱으로 넘어가지 마세요.</p>
+      </div>
+      <div class="result" id="result" hidden>
+        <video id="resultVideo" controls playsinline></video>
+        <div class="result-actions">
+          <a class="button primary" id="downloadLink" download>⬇ 영상(MP4) 저장</a>
+          <button class="ghost" id="shareBtn" type="button">📤 유튜브 · 인스타 · 틱톡으로 보내기</button>
+          <button class="primary bke-go" id="toEditBtn" type="button">✂️ BK에딧에서 최종 편집하러 가기</button>
+        </div>
+        <p class="hint tnum" id="resultInfo"></p>
+      </div>
+      <div class="group">
+        <h3>📺 올릴 때 쓸 글</h3>
+        <details class="tk-yt"><summary>📺 유튜브 · 릴스에 올릴 글 (제목 · 설명 · 해시태그)</summary>
+          <div class="field col"><label for="tkThumb">썸네일 문구</label><input type="text" id="tkThumb"></div>
+          <div class="field col"><label for="tkDesc">설명</label><textarea id="tkDesc" class="tk-sm" rows="3"></textarea></div>
+          <div class="field col"><label for="tkTags">해시태그</label><input type="text" id="tkTags"></div>
+          <div class="admin-2"><button type="button" class="ghost small" id="tkCopyTitle">📋 제목 복사</button><button type="button" class="ghost small" id="tkCopyDesc">📋 설명+태그+출처</button></div>
+          <div class="admin-2"><button type="button" class="ghost small" id="tkCopyTags">📋 해시태그만</button><span></span></div>
+        </details>
+      </div>
+      <p class="hint">사실처럼 보이는 AI 영상 · AI 음성을 올릴 땐 플랫폼의 ‘AI 생성(합성) 콘텐츠’ 표시를 켜 주세요.</p>
+    </section>
+
+    <!-- 🛠 관리자 메뉴 (만든 사람용) -->
+
+    <footer class="foot-brand"><button type="button" id="bkFoot" aria-label="BK Agent">BK Agent · 비케이</button></footer>
+
+
+
+
+  </main>
+
+  <nav class="tabbar" aria-label="단계">
+    <button data-tab="script" aria-current="page"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/></svg><span>대본</span></button>
+    <button data-tab="voice"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.92V21h2v-3.08A7 7 0 0019 11z"/></svg><span>목소리</span></button>
+    <button data-tab="scene"><svg viewBox="0 0 24 24"><path d="M4 6h11v12H4zM16 10l5-3v10l-5-3z"/></svg><span>장면</span></button>
+    <button data-tab="style"><svg viewBox="0 0 24 24"><path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z"/></svg><span>꾸미기</span></button>
+    <button data-tab="make"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM10 8v8l6-4z"/></svg><span>만들기</span></button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="../mp4mux.js"></script>
+<script src="engine.js"></script>
+<script src="music.js"></script>
+<script src="studio.js"></script>
+<script src="talk.js"></script>
+<script src="pair.js"></script>
+<script src="../handoff.js"></script>
+<script>document.getElementById('toEditBtn').addEventListener('click',function(){var v=document.getElementById('resultVideo');if(!v||!v.src){alert('먼저 「영상 만들기」로 영상을 만들어 주세요');return}fetch(v.src).then(function(r){return r.blob()}).then(function(b){return BKHAND.send(b,{key:'video',name:'영상 만들기 '+new Date().toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}),from:'🎬 영상 만들기'})}).catch(function(e){alert('넘기지 못했어요: '+(e&&e.message||e))})});</script>
+<script src="qr.js" defer></script>
+</body>
+</html>
