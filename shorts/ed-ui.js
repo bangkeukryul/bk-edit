@@ -56,7 +56,7 @@ $('fStart').addEventListener('change', e => {   // 보관함 「영상 시작」
 });
 $('addBig').addEventListener('click', async () => {
   if (!g.BKKIT) return toast('자료 넣기를 열 수 없어요');
-  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, scrap: 1, text: 1, funny: 1, music: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
+  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
   if (!r) return;
   if (r.kind === 'files') pushMedia(r.files);
   else if (r.kind === 'scrap') pushMedia(r.files, '_scrap');

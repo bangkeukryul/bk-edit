@@ -1025,9 +1025,18 @@ async function moreList() {
   let all = []; try { all = await IDB.all('p'); } catch (e) { /* 없음 */ }
   const want = LISTTAB === 'trash', list = all.filter(r => !!r.trash === want).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(4);
   const day = t => new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  const b = sheet(`📂 ${want ? '휴지통' : '내 프로젝트'} 더 보기 (${list.length}개)`, `<input type="text" id="pFind" placeholder="🔍 이름으로 찾기" style="margin-bottom:8px"><div id="pMini">${list.map(r => `<div class="pc pmini" data-id="${esc(r.id)}" data-n="${esc(r.name)}"><div><b>${esc(r.name)}</b><small>${day(want ? (r.trashedAt || r.at) : r.at)} · ${fmtS(r.dur || 0)}</small></div>
-    ${want ? '<button type="button" class="pri" data-a="restore">↩ 되살리기</button><button type="button" class="red" data-a="kill">🗑</button>' : '<button type="button" class="pri" data-a="open">✏️ 열기</button><button type="button" class="red" data-a="trash">🗑</button>'}</div>`).join('')}</div>`);
-  b.querySelector('#pFind').addEventListener('input', e => { const q = e.target.value.trim(); b.querySelectorAll('.pmini').forEach(x => { x.hidden = !!q && !x.dataset.n.includes(q); }); });
+  const row = r => `<div class="pc pmini" data-id="${esc(r.id)}"><div><b>${esc(r.name)}</b><small>${day(want ? (r.trashedAt || r.at) : r.at)} · ${fmtS(r.dur || 0)}</small></div>
+    ${want ? '<button type="button" class="pri" data-a="restore">↩ 되살리기</button><button type="button" class="red" data-a="kill">🗑</button>' : '<button type="button" class="pri" data-a="open">✏️ 열기</button><button type="button" class="red" data-a="trash">🗑</button>'}</div>`;
+  const PER = 10; let pg = 0, q = '';
+  const b = sheet(`📂 ${want ? '휴지통' : '프로젝트'} 더 보기 · ${list.length}개`, `<input type="text" id="pFind" placeholder="🔍 이름으로 찾기" style="margin-bottom:8px"><div id="pMini"></div><div id="pPages" class="ppages"></div>`);
+  const draw = () => {
+    const hit = q ? list.filter(r => String(r.name || '').includes(q)) : list, n = Math.max(1, Math.ceil(hit.length / PER)); if (pg >= n) pg = n - 1;
+    b.querySelector('#pMini').innerHTML = hit.slice(pg * PER, pg * PER + PER).map(row).join('') || '<p style="text-align:center;color:#64748b">찾는 프로젝트가 없어요</p>';
+    b.querySelector('#pPages').innerHTML = n < 2 ? '' : (pg > 0 ? `<button type="button" data-pg="${pg - 1}">◀</button>` : '') + Array.from({ length: n }, (_, i) => `<button type="button" data-pg="${i}"${i === pg ? ' class="on"' : ''}>${i + 1}</button>`).join('') + (pg < n - 1 ? `<button type="button" data-pg="${pg + 1}">▶</button>` : '');
+  };
+  draw();
+  b.querySelector('#pFind').addEventListener('input', e => { q = e.target.value.trim(); pg = 0; draw(); });
+  b.querySelector('#pPages').addEventListener('click', e => { const x = e.target.closest('[data-pg]'); if (!x) return; pg = +x.dataset.pg; draw(); b.scrollTop = 0; });
   b.addEventListener('click', async e => { const x = e.target.closest('button[data-a]'); if (!x) return; closeSheet(); await projClick(e); });
 }
 $('newFree').addEventListener('click', () => openProject(null));
