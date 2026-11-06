@@ -18,7 +18,7 @@
   const del = id => tx('readwrite', s => s.delete(id));
 
   /* ── 작은 도우미 ── */
-  const toast = (t, ms) => { const d = document.createElement('div'); d.textContent = t; d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 18px;border-radius:14px;font-weight:800;z-index:2147483000;max-width:90vw;text-align:center'; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 2200); };
+  const toast = (t, ms) => { document.querySelectorAll('.rtoast').forEach(x => x.remove()); const d = document.createElement('div'); d.className = 'rtoast'; d.textContent = t; d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 18px;border-radius:14px;font-weight:800;z-index:2147483000;max-width:90vw;text-align:center'; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 2200); };
   const st = document.createElement('style'); st.textContent = '.rs-dim{position:fixed;inset:0;z-index:2147482000;background:#0008;display:flex;align-items:flex-end;justify-content:center}.rs{width:100%;max-width:560px;max-height:90vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}.rs h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:1.1rem}.rs h3 span{flex:1}.rs h3 button{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:#f1f5f9;font-size:1.2rem}';
   document.head.appendChild(st);
   function sheet(title, html) {
@@ -51,13 +51,24 @@
   const showKey = on => { $('keyBox').hidden = !on; };
   showKey(!key());
   $('keySave').addEventListener('click', () => { const k = $('keyIn').value.trim(); if (!/^AIza[\w-]{20,}$/.test(k)) return alert('키 모양이 달라요. 「AIza」로 시작하는 키를 그대로 붙여넣어 주세요.'); LS(KEYNAME, k); $('keyIn').value = ''; quota(0); showKey(false); toast('🔑 저장했어요 (이 휴대폰에만)'); });
-  $('keyEdit').addEventListener('click', () => { showKey($('keyBox').hidden); if (!$('keyBox').hidden) $('keyBox').scrollIntoView({ behavior: 'smooth' }); });
+  $('keyEdit').addEventListener('click', () => { tab('find'); showKey($('keyBox').hidden); if (!$('keyBox').hidden) { $('keyBox').scrollIntoView({ behavior: 'smooth' }); setTimeout(() => $('keyIn').focus(), 300); } });
 
   /* ── 고르기 (기억) ── */
-  const OPT = Object.assign({ sLen: 'short', sWhen: '365', sMin: '1000000', sOrd: 'viewCount', sNat: 'ko' }, JSON.parse(LS('bkRefOpt') || '{}'));
-  ['sLen', 'sWhen', 'sMin', 'sOrd', 'sNat'].forEach(id => {
+  const OPT = Object.assign({ sLen: 'short', sWhen: '365', sMin: '1000000', sOrd: 'viewCount', sNat: 'ko', sCh: '0' }, JSON.parse(LS('bkRefOpt') || '{}'));
+  const SETS = {};
+  const moreOn = () => { $('moreOn').textContent = +OPT.sCh ? '켜짐' : ''; $('moreOn').hidden = !+OPT.sCh; };
+  ['sLen', 'sWhen', 'sMin', 'sOrd', 'sNat', 'sCh'].forEach(id => {
     const box = $(id), set = v => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
-    set(OPT[id]); box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; OPT[id] = b.dataset.v; set(b.dataset.v); LS('bkRefOpt', JSON.stringify(OPT)); });
+    SETS[id] = v => { OPT[id] = v; set(v); LS('bkRefOpt', JSON.stringify(OPT)); moreOn(); };
+    set(OPT[id]); box.addEventListener('click', e => { const b = e.target.closest('button'); if (b) SETS[id](b.dataset.v); });
+  });
+  moreOn(); if (+OPT.sCh) $('moreBox').open = true;
+  /* 🔥 한 번에 맞추기 */
+  document.querySelector('.presets').addEventListener('click', e => {
+    const b = e.target.closest('[data-p]'); if (!b) return;
+    if (b.dataset.p === 'hot') { SETS.sCh('0'); SETS.sWhen('7'); SETS.sOrd('daily'); SETS.sMin('100000'); toast('🔥 최근 1주 · 하루 조회수 순 · 10만 이상으로 맞췄어요'); }
+    else { SETS.sCh('100000'); SETS.sOrd('ratio'); SETS.sMin('100000'); $('moreBox').open = true; toast('🐣 구독자 10만 이하 · 구독자 대비 터진 순 · 10만 이상으로 맞췄어요'); }
+    if ($('q').value.trim()) search(false); else $('q').focus();
   });
   const other = () => { const q = encodeURIComponent($('q').value.trim()); $('toTT').href = 'https://www.tiktok.com/search?q=' + q; $('toIG').href = 'https://www.instagram.com/explore/search/keyword/?q=' + q; };
   $('q').addEventListener('input', other); other();
@@ -108,20 +119,32 @@
   async function details(ids) {   // 조회수 · 길이 (1점)
     if (!ids.length) return [];
     const j = await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 }); quota(1);   // 구글이 받아 준 뒤에만 세기
-    return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, lang: (v.snippet.defaultAudioLanguage || v.snippet.defaultLanguage || '').toLowerCase(), desc: (v.snippet.description || '').slice(0, 200), date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
+    return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, chId: v.snippet.channelId, lang: (v.snippet.defaultAudioLanguage || v.snippet.defaultLanguage || '').toLowerCase(), desc: (v.snippet.description || '').slice(0, 200), date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
   }
   async function onePage() {   // 검색 1번 (100점) → 조건에 맞는 것만
-    const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd, safeSearch: 'moderate' };
+    const p = { part: 'snippet', type: 'video', q: LAST, maxResults: 50, order: OPT.sOrd === 'relevance' ? 'relevance' : 'viewCount', safeSearch: 'moderate' };
     if (OPT.sNat === 'ko') { p.regionCode = 'KR'; p.relevanceLanguage = 'ko'; }
     if (OPT.sLen === 'short') p.videoDuration = 'short';
     if (+OPT.sWhen) p.publishedAfter = new Date(Date.now() - OPT.sWhen * 864e5).toISOString();
     if (NEXT) p.pageToken = NEXT;
     const j = await api('search', p); quota(100); NEXT = j.nextPageToken || '';   // 키 잠금 등으로 막히면 점수를 세지 않아요
     const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
-    const list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)) && natOk(v));
-    list.forEach(v => { delete v.desc; });
-    if (OPT.sOrd === 'viewCount') list.sort((a, b) => b.views - a.views);
+    let list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)) && natOk(v));
+    list.forEach(v => { delete v.desc; v.daily = Math.round(v.views / Math.max(1, (Date.now() - new Date(v.date)) / 864e5)); });
+    await subs(list);
+    if (+OPT.sCh) list = list.filter(v => v.subs != null && v.subs <= +OPT.sCh);
+    const by = { viewCount: v => v.views, daily: v => v.daily, ratio: v => v.ratio || 0 }[OPT.sOrd];
+    if (by) list.sort((a, b) => by(b) - by(a));
     RES = RES.concat(list);
+  }
+  /* 📺 채널 구독자 수 (50개 채널에 1점) → 구독자 대비 몇 배 */
+  async function subs(list) {
+    const ids = [...new Set(list.map(v => v.chId).filter(Boolean))]; if (!ids.length) return;
+    try {
+      const j = await api('channels', { part: 'statistics', id: ids.slice(0, 50).join(','), maxResults: 50 }); quota(1);
+      const m = {}; (j.items || []).forEach(c => { m[c.id] = c.statistics && !c.statistics.hiddenSubscriberCount ? +c.statistics.subscriberCount : null; });
+      list.forEach(v => { const n = m[v.chId]; v.subs = n == null ? null : n; v.ratio = n ? Math.round(v.views / n * 10) / 10 : 0; });
+    } catch (e) { /* 구독자 수 없이 */ }
   }
   /* 🌏 나라: 영상 말 정보(ko) 또는 제목에 한글이 있으면 한국 영상으로 봐요 */
   const isKo = v => /^ko/.test(v.lang || '') || /[가-힣]/.test(v.title || '') || (!v.lang && /[가-힣]{4,}/.test(v.desc || ''));
@@ -155,6 +178,7 @@
       + (NEXT && PG === n - 1 ? '<button type="button" class="rmore" id="rMore">⬇ 다음 50개 더 찾기 (100점)</button>' : '');
   }
   $('go').addEventListener('click', () => search(false));
+  $('go2').addEventListener('click', () => { if (!$('q').value.trim()) { $('q').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('q').focus(); return toast('위 칸에 무엇을 찾을지 써 주세요'); } search(false); });
   $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(false); } });
   $('res').addEventListener('click', e => {
     if (e.target.closest('#rMore')) { search(true); return; }
@@ -163,12 +187,19 @@
   });
 
   /* ── 카드 ── */
+  function st2(v) {
+    const a = [];
+    if (v.subs != null && v.subs !== undefined) a.push(`👥 구독자 ${views(v.subs)}`); else if ('subs' in v) a.push('👥 구독자 비공개');
+    if (v.ratio >= 1) a.push(`🔥 구독자의 ${v.ratio >= 10 ? Math.round(v.ratio) : v.ratio}배`);
+    if (v.daily) a.push(`📈 하루 ${views(v.daily)}회`);
+    return a.length ? `<span class="st2">${a.join(' · ')}</span>` : '';
+  }
   function card(v, saved, mine) {
     const meta = [v.views ? `<span class="vw">👀 ${views(v.views)}회</span>` : '', v.ch ? esc(v.ch) : '', v.date ? ymd(v.date) : ''].filter(Boolean).join(' · ');
     const memo = mine && ((v.tags && v.tags.length) || v.memo) ? `<p class="memo">${(v.tags || []).map(t => `<span>${esc(TAGTXT[t] || t)}</span>`).join('')}${esc(v.memo || '')}</p>` : '';
     const go = v.kind === 'yt' ? 'play' : 'open';
     return `<div class="rv" data-id="${esc(v.id)}"><div class="th" data-a="${go}" role="button" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}${v.kind === 'yt' ? '<span class="pl">▶</span>' : ''}</div>
-      <div style="min-width:0"><b data-a="${go}" role="button">${esc(v.title || v.url)}</b><small>${meta}</small>
+      <div style="min-width:0"><b data-a="${go}" role="button">${esc(v.title || v.url)}</b><small>${meta}</small>${st2(v)}
       <div class="acts">${v.kind === 'yt' ? `<button type="button" data-a="play">▶ 보기</button><a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브</a>` : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
       ${mine ? '<button type="button" data-a="memo">📝 메모</button><button type="button" data-a="make">🎬 이걸로 만들기</button><button type="button" class="red" data-a="del">🗑</button>'
         : `<button type="button" data-a="save" class="${saved ? 'on' : ''}">${saved ? '✅ 담았어요' : '📌 담기'}</button>`}</div></div>${memo}</div>`;
