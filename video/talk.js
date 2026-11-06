@@ -149,15 +149,18 @@ ${sceneReq()}${window.__bkeRef ? window.__bkeRef() : ''}`;
 [장면 나누기 — ${tool[0]}로 장면마다 ${sec}초 영상을 만들어 이어 붙여요]
 - 위 화면 대본을 순서대로 **장면 ${n}개**로 나눠 줘. 장면마다 대사 1~2줄 (${sec}초 동안 말할 수 있는 길이).
 - 장면 대사를 모두 이으면 ■ 화면 대본과 줄 · 순서가 똑같아야 해.
-- 프롬프트는 영어 한 문단: ${look[1]}, vertical 9:16, no text, no subtitles, no logos, no watermark · 카메라 움직임 1가지 · ${sec}초 안에 끝나는 동작.
+- 만드는 순서: Flow에서 ① 장면 이미지를 먼저 만들고 ② 그 이미지로 영상(이미지에서 영상)을 만들어요. 그래서 장면마다 이미지 프롬프트와 영상(움직임) 프롬프트를 따로 써 줘.
+- 이미지 프롬프트: 영어 한 문단 · ${look[1]}, vertical 9:16, no text, no subtitles, no logos, no watermark · 이 장면의 한 순간(시작 장면).
+- 영상 프롬프트: 영어 한두 문장 · 그 이미지에서 ${sec}초 동안 일어나는 움직임 · 카메라 움직임 1가지.
 - 실존 인물 · 실제 기관 로고 금지. 모든 장면에 같은 주인공 · 장소 묘사를 그대로 넣어 같은 인물로 보이게. 앞 장면이 끝난 모습에서 이어 시작.
 ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
 ` : ''}■ 설정
-(영어 · 주인공 · 장소 · 스타일 한 문단)
+(영어 · 기준 이미지 프롬프트 — 주인공 · 장소 · 스타일 한 문단 · 맨 처음 한 번 만들어 모든 장면의 참고 이미지로 써요)
 ■ 장면 1
 대사: (화면 대본 1~2줄 그대로)
 설명: (한글 한 줄 · 어떤 화면인지)
-프롬프트: (영어 한 문단)
+이미지: (영어 · 이미지 프롬프트)
+영상: (영어 · 움직임 프롬프트)
 ■ 장면 2
 … (장면 ${n}까지)`;
   }
@@ -201,10 +204,11 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
     SF.concat(['srcOut', 'chk']).forEach(k => { T[k] = r[k] || ''; });
     /* 출처 띠는 1차 편집에서 쓰지 않아요 */
     const all = parseScenes($('tkAns').value), sh = all.find(x => x.sheet), sc = all.filter(x => !x.sheet);
-    if (sc.length) { T.vsheet = sh ? sh.p.trim() : T.vsheet; T.vscenes = sc.map(x => ({ p: x.p.trim(), d: x.d.trim(), l: (x.l || '').trim() })); T.vlines = sc.map(x => Math.max(1, lines(x.l || '').length)); renderSheet(); }
+    if (sc.length) { T.vsheet = sh ? sh.p.trim() : T.vsheet; T.vscenes = sc.map(x => ({ p: (x.p || '').trim(), i: (x.i || '').trim(), d: x.d.trim(), l: (x.l || '').trim() })); T.vlines = sc.map(x => Math.max(1, lines(x.l || '').length)); renderSheet(); }
     save(); fillScript(); syncNarrText(); renderVopts(); renderVcards(); renderSceneSum();
     $('tkScript').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    toast(sc.length ? `✨ 대본과 장면 ${sc.length}개를 정리했어요 · 다음: 🎞 영상 클립` : '✨ 정리했어요 · 대본을 확인해 주세요', 3500);
+    toast(sc.length ? `✨ 대본과 장면 ${sc.length}개를 정리했어요 · 🎞 영상 클립 탭으로 갈게요` : '✨ 정리했어요 · 대본을 확인해 주세요', 3500);
+    if (sc.length && window.__bkeBoard) setTimeout(() => { A.showTab('scene'); window.__bkeBoard(); }, 900);
   }
   $('tkParse').addEventListener('click', doParse);
   SF.forEach(k => $(ID[k]).addEventListener('input', () => { T[k] = $(ID[k]).value; save(); if (k === 'disp' || k === 'read') { renderChecks(); syncNarrText(); } }));
@@ -228,8 +232,7 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
     const longL = d.filter(s => s.length > 32).length;
     if (longL) ok('warn', `너무 긴 줄 ${longL}개 (32자 넘음) · 자막이 3줄이 될 수 있어요`);
     if (/\d/.test(r.join(''))) ok('warn', '읽기용 대본에 숫자가 남아 있어요 · 한글로 바꾸면 더 자연스럽게 읽어요');
-    ok(p.src ? 'ok' : 'warn', p.src ? `출처: ${p.src}` : '출처가 비어 있어요 (뉴스 · 정보 영상은 꼭 넣어 주세요)');
-    if (T.chk && !/^없음/.test(T.chk.trim())) ok('warn', '확인 필요: ' + T.chk.replace(/\n/g, ' / '));
+    /* 출처 · 확인 필요 경고는 1차 편집에서 빼요 */
     $('tkCheck').innerHTML = items.join('');
   }
 
@@ -490,7 +493,7 @@ ${(T.vchar || '').trim() ? `- 주인공 · 장소 설정: ${T.vchar.trim()}
   });
   // ═════════ 🎬 AI 영상 장면 (Flow · Grok · Kling 등 유료 영상 AI) ═════════
   const TOOLS = {
-    flow: ['Google Flow (Veo)', 8, 'https://labs.google/fx/tools/flow'],
+    flow: ['Google Flow (Veo)', 8, 'https://flow.google.com/'],
     grok: ['Grok Imagine', 10, 'https://grok.com/imagine'],
     kling: ['Kling', 10, 'https://klingai.com/'],
     other: ['기타 영상 AI', 8, ''],
@@ -582,14 +585,16 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
       if ((m = s.match(/^(?:영어\s*)?(?:프롬프트|prompt)\s*[:：]\s*(.*)$/i))) { cur.p = m[1]; cur.k = 'p'; }
       else if ((m = s.match(/^(?:한글\s*)?설명\s*[:：]\s*(.*)$/))) { cur.d = m[1]; cur.k = 'd'; }
       else if ((m = s.match(/^대사\s*[:：]\s*(.*)$/))) { cur.l = m[1]; cur.k = 'l'; }
+      else if ((m = s.match(/^(?:🖼\s*)?(?:이미지|image)(?:\s*프롬프트)?\s*[:：]\s*(.*)$/i))) { cur.i = m[1]; cur.k = 'i'; }
+      else if ((m = s.match(/^(?:🎬\s*)?(?:영상|움직임|video|motion)(?:\s*프롬프트)?\s*[:：]\s*(.*)$/i))) { cur.p = m[1]; cur.k = 'p'; }
       else if (cur.k) cur[cur.k] = (cur[cur.k] || '') + (cur[cur.k] ? (cur.k === 'l' ? '\n' : ' ') : '') + s;
     }
-    return out.filter(x => x.p.trim());
+    return out.filter(x => (x.p || '').trim() || (x.i || '').trim());
   }
   $('tkVparse').addEventListener('click', () => {
     const all = parseScenes($('tkVans').value), sh = all.find(x => x.sheet), sc = all.filter(x => !x.sheet);
     if (!sc.length) { toast('‘■ 장면 1 / 프롬프트:’ 형식을 못 찾았어요'); return; }
-    T.vsheet = sh ? sh.p.trim() : ''; T.vscenes = sc.map(x => ({ p: x.p.trim(), d: x.d.trim(), l: (x.l || '').trim() })); if (sc.every(x => x.l)) T.vlines = sc.map(x => Math.max(1, lines(x.l).length)); save(); renderSheet(); renderVcards();
+    T.vsheet = sh ? sh.p.trim() : ''; T.vscenes = sc.map(x => ({ p: (x.p || '').trim(), i: (x.i || '').trim(), d: x.d.trim(), l: (x.l || '').trim() })); if (sc.every(x => x.l)) T.vlines = sc.map(x => Math.max(1, lines(x.l).length)); save(); renderSheet(); renderVcards();
     toast(`🎬 장면 ${sc.length}개 프롬프트를 정리했어요`);
   });
   $('tkVpaste').addEventListener('click', async () => { try { const t = await navigator.clipboard.readText(); if (t) { $('tkVans').value = t; $('tkVparse').click(); } } catch (e) { toast('칸을 길게 눌러 붙여넣어 주세요'); } });
@@ -751,6 +756,12 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   document.addEventListener('bk-photos', () => { renderVopts(); renderVcards(); });
   A.S.chsrc = () => ({ ch: '', src: '' });
   A.S.groupsFn = () => groups();
+  window.__bkeTalk = window.__bkeTalk || {};
+  Object.assign(window.__bkeTalk, {
+    scenes: () => groups().map((g, i) => { const sc = T.vscenes[i] || {}, it = A.S.photos.find(p => p.id === (A.S.talkMap || [])[g.idx[0]]); return { n: i + 1, lines: g.lines, dur: g.dur, d: sc.d || '', img: sc.i || '', vid: sc.p || '', clip: it && it.kind === 'video' ? it : null }; }),
+    sheet: () => T.vsheet || '', tool: () => TOOLS[T.vtool || 'flow'],
+    async setClip(i, f) { const g = groups()[i]; if (!g) return; const before = new Set(A.S.photos.map(p => p.id)); await A.addVideos([f]); const it = A.S.photos.find(p => !before.has(p.id)); if (!it) return; A.S.talkMap = A.S.talkMap || []; g.idx.forEach(k => { A.S.talkMap[k] = it.id; }); renderVopts(); renderVcards(); prepClipAudio(); A.scheduleRebuild(0); },
+  });
   /* 🔊 소리 고르기: 🎬 Flow 소리 그대로 · 🎙 내 목소리 · 🔀 섞기 */
   async function prepClipAudio() {
     if ((A.S.set.sound || 'mine') === 'mine') return;
@@ -771,6 +782,6 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   if ($('bkeSec')) $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === (T.vsec || '8'))));
   $('tkLen').addEventListener('click', () => setTimeout(renderSceneSum, 0));
   renderSound(); renderSceneSum();
-  window.__bkeTalk = { TOPICS, get topic() { return T.topic; }, get custom() { return T.custom; }, setTopic(k, c) { T.topic = k; if (c != null) T.custom = c; save(); renderTopics(); A.scheduleRebuild(200); }, buildReq: () => buildReq() };
+  Object.defineProperties(window.__bkeTalk, Object.getOwnPropertyDescriptors({ TOPICS, get topic() { return T.topic; }, get custom() { return T.custom; }, setTopic(k, c) { T.topic = k; if (c != null) T.custom = c; save(); renderTopics(); A.scheduleRebuild(200); }, buildReq: () => buildReq() }));
   window.__talk = { T, parseScenes, groups, buildVreq, parseAns, splitBySilence, readBkts, toWav, setNarr, decode, buildReq }; // 테스트용
 })();

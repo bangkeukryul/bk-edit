@@ -55,6 +55,21 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 .bke-dim{opacity:.45}.bke-more summary{cursor:pointer;list-style:none;padding:4px 0}.bke-more summary::-webkit-details-marker{display:none}
 .bke-ref{margin:4px 0 14px;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:14px;padding:8px 12px}.bke-ref summary{font-weight:900;cursor:pointer;padding:6px 0;color:#334155}
 .bke-reffiles{display:flex;gap:6px;overflow-x:auto;margin:6px 0}.bke-reffiles img{width:96px;height:96px;object-fit:cover;border-radius:10px}
+.bkb-flow{display:block;width:100%;min-height:54px;border-radius:14px;border:0;background:#111827;color:#fff;font-weight:900;font-size:1.05rem}
+.bkb-how{margin:8px 0;background:#f8fafc;border-radius:12px;padding:6px 12px}.bkb-how summary{font-weight:900;cursor:pointer}.bkb-how ol{margin:6px 0;padding-left:20px;line-height:1.7}
+.bkb-next{position:sticky;top:6px;z-index:5;display:block;width:100%;min-height:70px;margin-top:8px;border:0;border-radius:18px;background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;font-weight:900;font-size:1.2rem;box-shadow:0 8px 20px #0d948855}.bkb-next small{display:block;font-size:.9rem;font-weight:700;color:#ecfeff}.bkb-next:disabled{opacity:.5}
+.bkb-2b{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.bkb-sheet{margin-top:10px;background:#fef9c3;border-radius:12px;padding:8px 12px}.bkb-sheet p{margin:4px 0;font-size:.85rem;color:#475569;max-height:70px;overflow:auto}
+.bkb-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bkb-2 label{position:relative;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:12px;border:1.5px solid #dbe3ef;background:#fff;font-weight:800;color:#174782;font-size:.92rem}.bkb-2 input{position:absolute;inset:0;opacity:0}
+.bkb-big{min-height:64px!important;background:#ccfbf1!important;color:#0f766e!important;border-color:#5eead4!important;font-size:1rem!important}
+.bkb{display:grid;gap:10px;margin:10px 0}.bkb-c{background:#fff;border:1.5px solid #dbe3ef;border-radius:16px;padding:10px 12px}
+.bkb-h{display:flex;align-items:center;gap:8px}.bkb-h b{font-size:1.1rem}.bkb-h span{color:#64748b;font-size:.85rem}.bkb-h em{margin-left:auto;font-style:normal;font-size:.8rem;font-weight:800;background:#dcfce7;color:#166534;border-radius:999px;padding:2px 8px}.bkb-h em.y{background:#fef3c7;color:#92400e}
+.bkb-l{margin:6px 0 2px;font-weight:700}.bkb-d{margin:0 0 6px;color:#64748b;font-size:.88rem}
+.bkb-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start}
+.bkb-th{position:relative;width:96px;height:150px;border-radius:12px;background:#0f172a;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.8rem}.bkb-th img{width:100%;height:100%;object-fit:cover}.bkb-th i{position:absolute;left:4px;top:4px;font-style:normal}
+.bkb-bt{display:grid;gap:6px}.bkb-bt>button{min-height:44px;border-radius:12px;border:1.5px solid #dbe3ef;background:#f8fafc;font-weight:800;font-size:.9rem;color:#174782;text-align:left;padding:0 10px}.bkb-bt>button.ok{background:#dcfce7;border-color:#86efac;color:#166534}
+body.bke-noclip:not(.bke-pre) .stage .screen{height:64px!important;aspect-ratio:auto!important;width:100%!important}body.bke-noclip:not(.bke-pre) .stage .transport{display:none}
+body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:not(.bke-pre) .screen-empty p br{display:none}
 </style>
 </head>
 <body>
@@ -152,9 +167,25 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 
     <!-- 🎬 장면 -->
     <section class="panel" data-panel="scene" hidden>
-      <div class="panel-head"><h2>🎞 영상 클립</h2><p>장면 카드마다 <b>프롬프트 복사 → Flow에서 만들기 → 만든 클립 넣기</b>. 여러 개를 한꺼번에 넣으면 파일 이름 순서대로 들어가요.</p></div>
-      <div class="group">
-        <h3>🎞 장면별 영상 클립 넣기 <small>(Flow · Grok · Kling 등)</small></h3>
+      <div class="panel-head"><h2>🎞 영상 클립</h2><p><b>Flow(위 화면)</b>에서 이미지 → 영상을 만들고, 내려받은 것을 <b>여기(아래 화면)</b>로 한꺼번에 가져와요.</p></div>
+      <div class="group bkb-top">
+        <button type="button" class="bkb-flow" id="bkbFlow">↗ Flow 열기 (크롬 새 창)</button>
+        <details class="bkb-how"><summary>📱 화면 나누기 (Flow 위 · BK에딧 아래)</summary>
+          <ol><li>위 버튼으로 Flow를 크롬에서 열어요.</li><li>휴대폰 <b>최근 앱 버튼(|||)</b> → <b>크롬</b> 아이콘을 꾹 → <b>「분할 화면으로 열기」</b> → Flow가 <b>위</b>로 가요.</li><li>아래 빈칸에서 <b>BK에딧</b>을 고르면 우리 앱이 <b>아래</b>로 와요.</li><li>반대로 열렸으면 가운데 막대 <b>⋯ → 「위치 바꾸기」</b>.</li></ol></details>
+        <button type="button" class="bkb-next" id="bkbNext">📋 다음 복사</button>
+        <div class="bkb-2b"><button type="button" class="ghost small" id="bkbPrev">◀ 한 칸 전</button><button type="button" class="ghost small" id="bkbReset">↺ 처음부터</button></div>
+        <div id="bkbSheet" class="bkb-sheet" hidden><b>🧑‍🎨 기준 이미지 (맨 처음 한 번 · 모든 장면 참고 이미지)</b><p id="bkbSheetTx"></p><button type="button" class="ghost small" id="bkbSheetCp">📋 기준 이미지 프롬프트 복사</button></div>
+        <h3 style="margin-top:12px">📥 내려받은 것 한꺼번에 가져오기 <small>(내려받은 순서대로 장면에 · 📥 보관함에도 담겨요)</small></h3>
+        <div class="bkb-2"><label class="bkb-big">🖼 장면 사진 가져오기<input type="file" id="bkbImgs" accept="image/*" multiple></label><label class="bkb-big">🎞 장면 영상 가져오기<input type="file" id="bkbVids" accept="video/*" multiple></label></div>
+      </div>
+      <p class="hint" id="bkbEmpty">먼저 📝 대본·장면에서 AI 답을 붙여넣고 「✨ 정리하기」를 눌러 주세요. 장면 카드가 여기에 생겨요.</p>
+      <div id="bkBoard" class="bkb"></div>
+      <details class="group bke-more"><summary><h3 style="display:inline">🛠 더 보기 <small>(스토리보드 칸 나누기 · 클립보드에 담기 · 영상 AI · 화면 스타일 · 예전 방식)</small></h3></summary>
+        <button type="button" class="ghost block-s" id="bkbGrid">🧩 스토리보드 한 장 → 칸 나누기</button>
+        <button type="button" class="ghost block-s" id="bkbAll">📋 전부 차례로 키보드 클립보드에 담기</button>
+
+      <div>
+        <h3>🎞 영상 AI · 화면 스타일 · 예전 장면 카드</h3>
         <p class="hint">영상 AI는 한 번에 6~10초 클립만 만들어요. 대본을 <b>클립 여러 개의 시나리오</b>로 나눠 만들고, BK영상이 <b>순서대로 이어 붙여</b> 30~60초 한 편으로 만들어요. 영상 AI에는 <b>소리 없는 장면</b>만 만들게 하고, 자막 · 내 목소리는 BK영상이 맞춰요.</p>
         <div class="field col"><span class="lbl">쓸 영상 AI</span><div class="chips" id="tkVtool"></div></div>
         <div class="field col"><span class="lbl">화면 스타일 <small>(모든 장면 통일)</small></span><div class="chips" id="tkVlook"></div></div>
@@ -191,6 +222,7 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
         <p class="hint" id="photoEmpty">문장마다 차례대로 장면이 바뀌어요. 아래 🎬 AI 영상 장면에서 장면마다 정해 줄 수도 있어요.</p>
         <ol class="photo-grid" id="photoGrid"></ol>
         <p class="hint">⚠️ 언론사 기사 화면 · 사진을 그대로 쓰면 저작권 문제가 될 수 있어요. 캡처는 <b>대본 재료</b>로 쓰고, 화면은 내 사진 · 자동 배경 · AI 영상 · 공공누리 자료를 권해요.</p>
+      </details>
       </details>
       <button type="button" class="primary block next" data-go="voice">다음: 🔊 소리 →</button>
     </section>
@@ -346,6 +378,7 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 <script src="../bkkit.js"></script>
 <script src="../handoff.js"></script>
 <script src="bke.js"></script>
+<script src="board.js"></script>
 <script>document.getElementById('toEditBtn').addEventListener('click',function(){var v=document.getElementById('resultVideo');if(!v||!v.src){alert('먼저 「영상 만들기」로 영상을 만들어 주세요');return}fetch(v.src).then(function(r){return r.blob()}).then(function(b){return BKHAND.send(b,{key:'video',name:'영상 만들기 '+new Date().toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}),from:'🎬 영상 만들기'})}).catch(function(e){alert('넘기지 못했어요: '+(e&&e.message||e))})});</script>
 <script src="qr.js" defer></script>
 </body>

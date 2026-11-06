@@ -11,7 +11,7 @@
   const FILES = ['index.html', 'edit.js', 'edit.css', 'fx.js', 'handoff.js', 'terms.js', 'admin.js', 'bkkit.js', 'license.js', 'mp4mux.js', 'sw.js', 'manifest.webmanifest', 'README.md',
     'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'og.png',
     'shorts/edit.html', 'shorts/edit.css', 'shorts/ed-core.js', 'shorts/ed-render.js', 'shorts/ed-ui.js', 'shorts/engine.js', 'shorts/music.js', 'shorts/qr.js', 'shorts/lib.js', 'shorts/bkguard.js',
-    'video/index.html', 'video/bke.js', 'video/style.css', 'video/studio.js', 'video/talk.js', 'video/pair.js', 'video/engine.js', 'video/music.js', 'video/qr.js', 'video/bkguard.js'];
+    'video/index.html', 'video/bke.js', 'video/board.js', 'video/style.css', 'video/studio.js', 'video/talk.js', 'video/pair.js', 'video/engine.js', 'video/music.js', 'video/qr.js', 'video/bkguard.js'];
   const OPTIONAL = ['README.md', 'admin.js'];
 
   // ── 켜기 / 끄기 ──
