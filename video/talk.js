@@ -777,7 +777,7 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
     const mv = $('tkVmode') && $('tkVmode').closest('.group'); if (mv) mv.classList.toggle('bke-dim', m === 'flow');
   }
   if ($('bkeSound')) $('bkeSound').addEventListener('click', e => { const b = e.target.closest('button[data-snd]'); if (!b) return; A.S.set.sound = b.dataset.snd; try { localStorage.setItem('bk-edit-video.v1', JSON.stringify(A.S.set)); } catch (er) { /* 무시 */ } renderSound(); prepClipAudio(); A.scheduleRebuild(0); });
-  function renderSceneSum() { const el = $('bkeSceneSum'); if (!el) return; const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8'; el.innerHTML = `🎬 <b>${T.len}초 = ${sec}초 × ${n}장면</b> · 장면마다 대사 · 화면 설명 · 영상 프롬프트를 받아요`; }
+  function renderSceneSum() { const el = $('bkeSceneSum'); if (!el) return; const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8'; el.innerHTML = `🎬 <b>${T.len}초 = ${sec}초 × ${n}장면</b> · 대본 약 ${LEN[T.len][0]}자`; }
   if ($('bkeSec')) $('bkeSec').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vsec = b.dataset.v; if (+T.vsec >= 15 && T.vtool !== 'kling') { T.vtool = 'kling'; toast('🎬 15 · 30초 장면은 Kling에 맞춰 요청서를 만들어요 (🎞 영상 클립 → 🛠 더 보기에서 바꿀 수 있어요)', 4000); } else if (+T.vsec <= 8 && T.vtool === 'kling') T.vtool = 'flow'; save(); $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderSceneSum(); renderVopts(); });
   /* 🎨 화면 스타일 (대본 탭) — 기본 📷 실사 */
   function renderLook() { const el = $('bkeLook'); if (!el) return; el.innerHTML = Object.entries(LOOKS).map(([k, t]) => `<button type="button" data-v="${k}" aria-pressed="${k === T.vlook}">${t[0]}</button>`).join(''); }

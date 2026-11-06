@@ -70,6 +70,13 @@ body:not(.bke-pre) .transport{background:#f3f6fb;border-radius:14px;padding:4px 
 .bkb-bt{display:grid;gap:6px}.bkb-bt>button{min-height:44px;border-radius:12px;border:1.5px solid #dbe3ef;background:#f8fafc;font-weight:800;font-size:.9rem;color:#174782;text-align:left;padding:0 10px}.bkb-bt>button.ok{background:#dcfce7;border-color:#86efac;color:#166534}
 body.bke-noclip:not(.bke-pre) .stage .screen{height:64px!important;aspect-ratio:auto!important;width:100%!important}body.bke-noclip:not(.bke-pre) .stage .transport{display:none}
 body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:not(.bke-pre) .screen-empty p br{display:none}
+/* 세로 줄이기: 제목 위 · 버튼은 가로 한 줄 */
+.panel .field:has(> .seg){display:block}.panel .field:has(> .seg)>.lbl{display:block;font-weight:900;font-size:.95rem;color:#334155;margin:6px 0 4px}
+.panel .field>.seg{display:flex!important;flex-wrap:nowrap!important;width:100%;gap:3px}.panel .field>.seg button{flex:1 1 0!important;min-width:0;padding:8px 2px!important;white-space:nowrap;font-size:.95rem!important}
+html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:100%}.panel .field>.seg button{overflow:hidden;text-overflow:ellipsis}
+.pk-row{box-sizing:border-box;max-width:100%;overflow:hidden;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #dbe3ef;border-radius:14px;padding:6px 8px 6px 12px;margin:6px 0}.pk-t{font-weight:900;white-space:nowrap}.pk-v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#0f766e}
+.pk-b{flex:none;min-height:42px;padding:0 12px;border-radius:12px;border:0;background:#0d9488;color:#fff;font-weight:900}
+.bkk #bkeMusicPick .builtin,.bkk #presets,.bkk #bkeLook{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 </head>
 <body>
@@ -123,10 +130,10 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
         <div class="field col"><label for="tkMemo">자료 메모 <small>(선택 · 기사 글 붙여넣기, 강조할 점)</small></label><textarea id="tkMemo" rows="4" class="tk-sm" placeholder="캡처 사진은 AI 앱에서 📎로 같이 첨부해요."></textarea></div>
         <h3 style="margin-top:14px">⏱ 몇 초짜리로 만들까요?</h3>
         <div class="field"><span class="lbl">분량</span><div class="seg" id="tkLen"><button type="button" data-v="15">15초</button><button type="button" data-v="30">30초</button><button type="button" data-v="45">45초</button><button type="button" data-v="60">60초</button></div></div>
-        <p class="hint" id="tkLenInfo"></p>
-        <div class="field"><span class="lbl">장면 길이</span><div class="seg" id="bkeSec"><button type="button" data-v="6">6초</button><button type="button" data-v="8">8초 (Flow)</button><button type="button" data-v="10">10초</button><button type="button" data-v="15">15초</button><button type="button" data-v="30">30초 (Kling)</button></div></div>
+        <p class="hint" id="tkLenInfo" hidden></p>
+        <div class="field"><span class="lbl">장면 길이</span><div class="seg" id="bkeSec"><button type="button" data-v="6">6초</button><button type="button" data-v="8">8 Flow</button><button type="button" data-v="10">10초</button><button type="button" data-v="15">15초</button><button type="button" data-v="30">30 Kling</button></div></div>
         <p class="hint" id="bkeSceneSum"></p>
-        <span class="lbl">🎨 화면 스타일 <small>(기본 📷 실사)</small></span>
+        <span class="lbl" hidden>🎨 화면 스타일</span>
         <div class="chips" id="bkeLook"></div>
         <div hidden><div id="tkTopics"></div><input type="text" id="tkCh"><input type="text" id="tkOpen"><input type="text" id="tkSrc"><input type="checkbox" id="tkEnd"></div>
       </div>
@@ -296,9 +303,8 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
         <div class="chips" id="presets" data-k="preset"></div>
         <div class="field"><label for="size">글자 크기</label><input type="range" id="size" data-k="size" min="48" max="96" step="2"><output data-o="size"></output></div>
         <div class="field"><span class="lbl">자막 위치</span><div class="seg" data-k="yPos"><button type="button" data-v="24">⬆ 위</button><button type="button" data-v="50">가운데</button><button type="button" data-v="74">⬇ 아래</button></div></div>
-        <div class="field toggle"><label for="showCh">위에 채널 이름 띠</label><input type="checkbox" id="showCh" data-k="showCh" role="switch"></div>
-        <div class="field toggle"><label for="showSrc">아래에 출처</label><input type="checkbox" id="showSrc" data-k="showSrc" role="switch"></div>
-        <p class="hint">채널 이름 · 출처 글자는 📝 대본 ①에서 바꿔요.</p>
+        <div class="field toggle" hidden><label for="showCh">위에 채널 이름 띠</label><input type="checkbox" id="showCh" data-k="showCh" role="switch"></div>
+        <div class="field toggle" hidden><label for="showSrc">아래에 출처</label><input type="checkbox" id="showSrc" data-k="showSrc" role="switch"></div>
       </div>
       <div class="group">
         <h3>화면 움직임</h3>
@@ -306,7 +312,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
         <div class="field"><span class="lbl">사진 움직임</span><div class="seg" data-k="motion"><button type="button" data-v="random">천천히 줌</button><button type="button" data-v="none">없음</button></div></div>
       </div>
       <div class="group">
-        <h3>🎵 배경음악 <small>(목소리 뒤에 작게 · 저작권 걱정 없는 기본 음악)</small></h3>
+        <h3>🎵 배경음악</h3>
         <p class="hint" id="musicNow" hidden><span id="musicName"></span> <button type="button" class="ghost small" id="musicRemove">빼기</button></p>
         <div id="builtinList" class="builtin"></div>
         <label class="drop"><input type="file" id="musicInput" accept="audio/*,.mp3,.m4a,.wav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3z"/></svg><span>내 음악 파일<small>MP3 · M4A · WAV</small></span></label>
@@ -382,6 +388,7 @@ body.bke-noclip:not(.bke-pre) .screen-empty p{font-size:.85rem}body.bke-noclip:n
 <script src="../handoff.js"></script>
 <script src="bke.js"></script>
 <script src="board.js"></script>
+<script src="pick.js"></script>
 <script>document.getElementById('toEditBtn').addEventListener('click',function(){var v=document.getElementById('resultVideo');if(!v||!v.src){alert('먼저 「영상 만들기」로 영상을 만들어 주세요');return}fetch(v.src).then(function(r){return r.blob()}).then(function(b){return BKHAND.send(b,{key:'video',name:'영상 만들기 '+new Date().toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}),from:'🎬 영상 만들기'})}).catch(function(e){alert('넘기지 못했어요: '+(e&&e.message||e))})});</script>
 <script src="qr.js" defer></script>
 </body>
