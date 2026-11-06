@@ -50,6 +50,7 @@
   /* 보드 그리기 */
   function render() {
     const t = TK(), box = $('bkBoard'); if (!t || !box) return;
+    { const fb = $('bkbFlow'), tl = t.tool && t.tool(); if (fb && tl) fb.textContent = `↗ ${tl[0].replace(/ \(.*\)/, '')} 열기 (크롬 새 창)`; }
     const sc = t.scenes(), done = DONE(), sh = t.sheet();
     $('bkbEmpty').hidden = !!sc.length;
     $('bkbSheet').hidden = !sh; if (sh) $('bkbSheetTx').textContent = sh;

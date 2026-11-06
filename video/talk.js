@@ -147,9 +147,9 @@ ${sceneReq()}${window.__bkeRef ? window.__bkeRef() : ''}`;
     const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8', tool = TOOLS[T.vtool || 'flow'], look = LOOKS[T.vlook || 'real'];
     return `
 [장면 나누기 — ${tool[0]}로 장면마다 ${sec}초 영상을 만들어 이어 붙여요]
-- 위 화면 대본을 순서대로 **장면 ${n}개**로 나눠 줘. 장면마다 대사 1~2줄 (${sec}초 동안 말할 수 있는 길이).
+- 위 화면 대본을 순서대로 **장면 ${n}개**로 나눠 줘. 장면마다 대사 ${+sec >= 15 ? Math.round(sec / 4) + '~' + Math.round(sec / 3) : '1~2'}줄 (${sec}초 동안 말할 수 있는 길이).
 - 장면 대사를 모두 이으면 ■ 화면 대본과 줄 · 순서가 똑같아야 해.
-- 만드는 순서: Flow에서 ① 장면 이미지를 먼저 만들고 ② 그 이미지로 영상(이미지에서 영상)을 만들어요. 그래서 장면마다 이미지 프롬프트와 영상(움직임) 프롬프트를 따로 써 줘.
+${+sec >= 15 ? `- 한 장면이 ${sec}초로 길어요. 한 장면 안에서 2~4개의 동작 · 표정 · 대사가 자연스럽게 이어지게 써 줘 (영상 프롬프트에 시간 순서대로: 0~${Math.round(sec / 3)}초 …, 그다음 …).\n` : ''}- 만드는 순서: ${tool[0]}에서 ① 장면 이미지를 먼저 만들고 ② 그 이미지로 영상(이미지에서 영상)을 만들어요. 그래서 장면마다 이미지 프롬프트와 영상(움직임) 프롬프트를 따로 써 줘.
 - 이미지 프롬프트: 영어 한 문단 · ${look[1]}, vertical 9:16, no text, no subtitles, no logos, no watermark · 이 장면의 한 순간(시작 장면).
 - 영상 프롬프트: 영어 한두 문장 · 그 이미지에서 ${sec}초 동안 일어나는 움직임 · 카메라 움직임 1가지.
 - 실존 인물 · 실제 기관 로고 금지. 모든 장면에 같은 주인공 · 장소 묘사를 그대로 넣어 같은 인물로 보이게. 앞 장면이 끝난 모습에서 이어 시작.
@@ -778,7 +778,7 @@ ${g.map((x, i) => `장면 ${i + 1} (약 ${x.dur.toFixed(0)}초) — 대본: ${x.
   }
   if ($('bkeSound')) $('bkeSound').addEventListener('click', e => { const b = e.target.closest('button[data-snd]'); if (!b) return; A.S.set.sound = b.dataset.snd; try { localStorage.setItem('bk-edit-video.v1', JSON.stringify(A.S.set)); } catch (er) { /* 무시 */ } renderSound(); prepClipAudio(); A.scheduleRebuild(0); });
   function renderSceneSum() { const el = $('bkeSceneSum'); if (!el) return; const n = sceneN(), sec = T.vsec && T.vsec !== '0' ? T.vsec : '8'; el.innerHTML = `🎬 <b>${T.len}초 = ${sec}초 × ${n}장면</b> · 장면마다 대사 · 화면 설명 · 영상 프롬프트를 받아요`; }
-  if ($('bkeSec')) $('bkeSec').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vsec = b.dataset.v; save(); $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderSceneSum(); renderVopts(); });
+  if ($('bkeSec')) $('bkeSec').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; T.vsec = b.dataset.v; if (+T.vsec >= 15 && T.vtool !== 'kling') { T.vtool = 'kling'; toast('🎬 15 · 30초 장면은 Kling에 맞춰 요청서를 만들어요 (🎞 영상 클립 → 🛠 더 보기에서 바꿀 수 있어요)', 4000); } else if (+T.vsec <= 8 && T.vtool === 'kling') T.vtool = 'flow'; save(); $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderSceneSum(); renderVopts(); });
   if ($('bkeSec')) $('bkeSec').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === (T.vsec || '8'))));
   $('tkLen').addEventListener('click', () => setTimeout(renderSceneSum, 0));
   renderSound(); renderSceneSum();
