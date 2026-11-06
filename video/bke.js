@@ -67,8 +67,9 @@
   const push = (fs, mark) => { for (const f of fs) { try { f._u = URL.createObjectURL(f); } catch (e) { /* 무시 */ } if (mark) f[mark] = 1; PEND.push(f); } render(); };
   $('bkeAdd').addEventListener('click', async () => {
     if (!window.BKKIT) return;
-    const r = await window.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, textHint: '기사 · 자료 글 붙여넣기' });
+    const r = await window.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, ref: 1, textHint: '기사 · 자료 글 붙여넣기' });
     if (!r) return;
+    if (r.kind === 'ref') { window.BKKIT.refSet('video', r.ref); useRef(r.ref, true); return; }
     if (r.kind === 'files') push(r.files);
     else if (r.kind === 'scrap') push(r.files, '_scrap');
     else if (r.kind === 'music') { PEND.push({ kind: 'music', file: r.files[0] }); render(); }
@@ -141,19 +142,25 @@
     return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 봐 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}${rm ? `- 내가 본 점: ${rm}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 형식 · 흐름만 비슷하게 하고, 문장 · 장면 · 내용은 내 자료로 새로 만들어 줘 (그대로 베끼지 말 것).`;
   };
   window.__bkeRefFiles = () => REF.files.concat(REF.sheet ? [REF.sheet] : []);
-  /* 🔎 레퍼런스에서 「🎬 이걸로 만들기」로 왔을 때: 링크 · 따라 할 점 · 메모를 참고 영상 칸에 */
+  /* 🎯 참고 영상 (내 레퍼런스): 링크 · 따라 할 점 · 메모 → 「🎞 참고 영상」 칸 + 위 띠 */
+  const RMAP = { hook: 'hook', cap: 'cap', pace: 'pace', flow: 'flow' };
+  function useRef(pk, fresh) {
+    if (!pk || !pk.url) return;
+    if ($('bkeRefLink')) $('bkeRefLink').value = pk.url;
+    const on = (pk.tags || []).map(t => RMAP[t]).filter(Boolean);
+    if (on.length) document.querySelectorAll('#bkeRefWhat button').forEach(b => b.setAttribute('aria-pressed', String(on.includes(b.dataset.v))));
+    const extra = (pk.tags || []).filter(t => !RMAP[t]).map(t => ({ music: '음악', len: '길이', thumb: '썸네일' }[t])).filter(Boolean);
+    window.__bkeRefMemo = [pk.title ? `「${pk.title}」` : '', extra.length ? `(${extra.join(' · ')}도 참고)` : '', pk.memo || ''].filter(Boolean).join(' ');
+    if (fresh && $('bkeRef')) $('bkeRef').open = true;
+    showRefBar();
+    if (fresh) { const t = document.createElement('div'); t.textContent = '🎯 참고 영상을 붙였어요 — 위 띠에서 ▶ 다시 볼 수 있어요'; t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 16px;border-radius:14px;font-weight:800;z-index:2147483000;max-width:90vw;text-align:center'; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+  }
+  function clearRef() { if ($('bkeRefLink')) $('bkeRefLink').value = ''; window.__bkeRefMemo = ''; }
+  function showRefBar() { if (window.BKKIT) window.BKKIT.refBar('video', [$('bkeStart'), document.querySelector('[data-panel="script"] .bke-src')], clearRef); }
   try {
     const pk = JSON.parse(localStorage.getItem('bkeRefPick') || 'null');
-    if (pk && pk.url && /[?&]ref=1/.test(location.search)) {
-      localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname);
-      if ($('bkeRefLink')) $('bkeRefLink').value = pk.url;
-      const map = { hook: 'hook', cap: 'cap', pace: 'pace', flow: 'flow' }, on = (pk.tags || []).map(t => map[t]).filter(Boolean);
-      if (on.length) document.querySelectorAll('#bkeRefWhat button').forEach(b => b.setAttribute('aria-pressed', String(on.includes(b.dataset.v))));
-      const extra = (pk.tags || []).filter(t => !map[t]).map(t => ({ music: '음악', len: '길이', thumb: '썸네일' }[t])).filter(Boolean);
-      window.__bkeRefMemo = [pk.title ? `「${pk.title}」` : '', extra.length ? `(${extra.join(' · ')}도 참고)` : '', pk.memo || ''].filter(Boolean).join(' ');
-      if ($('bkeRef')) $('bkeRef').open = true;
-      setTimeout(() => alert('🔎 레퍼런스를 「🎞 참고 영상」에 넣었어요.\n\n주제 · 자료를 넣고 ✅ 선택 완료 → 대본 탭에서 AI에게 보낼 때 함께 들어가요.'), 600);
-    }
+    if (pk && pk.url && /[?&]ref=1/.test(location.search)) { localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname); if (window.BKKIT) window.BKKIT.refSet('video', pk); useRef(pk, true); }
+    else if (window.BKKIT && window.BKKIT.refGet('video')) useRef(window.BKKIT.refGet('video'), false);
   } catch (e) { /* 무시 */ }
   showFiles(); setTimeout(sync, 300); sync(); render();
   $('bkeTopicBtn').addEventListener('click', () => setTimeout(render, 50)); document.addEventListener('click', e => { if (e.target.closest('.bkk-dim')) setTimeout(render, 80); });

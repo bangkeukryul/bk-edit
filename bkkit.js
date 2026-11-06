@@ -15,7 +15,12 @@ const PREF = 'bkPickSave';   // ask · always · never
 .bkk{width:100%;max-width:560px;max-height:86vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px #0003}
 .bkk h3{margin:2px 0 10px;font-size:1.25rem;display:flex;justify-content:space-between;align-items:center}.bkk h3 button{width:46px;height:46px;border-radius:50%;border:0;background:#eef2f7;font-size:1.2rem}
 .bkk .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bkk .op{min-height:76px;border-radius:16px;border:1.5px solid #dbe3ef;background:#fff;font-weight:900;font-size:1rem;padding:8px;text-align:center}
-.bkk .op small{display:block;font-weight:600;font-size:.78rem;color:#64748b;margin-top:2px}.bkk .op.hi{background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;border:0}.bkk .op.hi small{color:#e0fffa}
+.bkk .op small{display:block;font-weight:600;font-size:.78rem;color:#64748b;margin-top:2px}.bkk .op.hi{background:linear-gradient(135deg,#14b8a6,#0e7490);color:#fff;border:0}.bkk .op.hi small{color:#e0fffa}.bkk .op.wide{grid-column:1/-1;min-height:64px;background:linear-gradient(135deg,#f5f3ff,#fdf2f8);border-color:#ddd6fe;color:#5b21b6}
+.bkk-rl{display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;border:1.5px solid #e2e8f0;border-radius:14px;padding:6px;margin-bottom:6px}.bkk-rl i{width:64px;height:64px;border-radius:10px;background:#0f172a center/cover;display:block}.bkk-rl b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.9rem;line-height:1.3}.bkk-rl small{display:block;color:#64748b;font-size:.75rem}.bkk-rl button{min-height:44px;padding:0 12px;border-radius:12px;border:0;background:#5b21b6;color:#fff;font-weight:900}
+.bkk-pg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0}.bkk-pg button{min-width:42px;min-height:42px;border-radius:10px;border:1.5px solid #cbd5e1;background:#fff;font-weight:900;color:#5b21b6}.bkk-pg button.on{background:#5b21b6;color:#fff;border-color:#5b21b6}
+.bkk-refbar{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f5f3ff,#fdf2f8);border:1.5px solid #ddd6fe;border-radius:14px;padding:6px 8px;margin:0 0 10px;font:15px/1.35 "Noto Sans KR",system-ui,sans-serif;color:#111827}.bkk-refbar i{flex:none;width:44px;height:44px;border-radius:8px;background:#0f172a center/cover}.bkk-refbar div{flex:1;min-width:0}.bkk-refbar div b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}.bkk-refbar div small{color:#7c3aed;font-weight:800;font-size:.75rem}.bkk-refbar button{flex:none;min-height:40px;padding:0 10px;border-radius:10px;border:0;background:#5b21b6;color:#fff;font-weight:900;font-size:.85rem}.bkk-refbar button.x{background:#fff;color:#64748b;border:1.5px solid #e2e8f0}
+.bkk-refchip{flex:none;min-height:36px;padding:0 10px;border-radius:999px;border:0;background:#ede9fe;color:#5b21b6;font-weight:900;font-size:.82rem;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bkk-play{position:relative;width:100%;aspect-ratio:9/16;max-height:60vh;background:#000;border-radius:14px;overflow:hidden}.bkk-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.bkk-tags span{display:inline-block;background:#ede9fe;color:#5b21b6;border-radius:8px;padding:0 6px;margin:0 4px 4px 0;font-weight:800;font-size:.8rem}
 .bkk .bb{display:block;width:100%;min-height:56px;margin-top:10px;border-radius:16px;border:0;font-weight:900;font-size:1.05rem;background:#e8eef8;color:#174782}.bkk .bb.pri{background:#0d9488;color:#fff}.bkk .bb:disabled{opacity:.45}
 .bkk textarea{width:100%;min-height:150px;border:1.5px solid #dbe3ef;border-radius:14px;padding:12px;font:inherit;box-sizing:border-box}
 .bkk .lg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}.bkk .lg button{position:relative;aspect-ratio:1;border:2px solid transparent;border-radius:12px;background:#0f172a center/cover no-repeat;padding:0;color:#fff;font-size:1.4rem}
@@ -109,10 +114,10 @@ function open(opts) {
   opts = Object.assign({ gallery: 1, files: 1, lib: 1 }, opts || {});
   const B = [
     ['gallery', '📷 사진 · 🎞 영상', '휴대폰 갤러리', 1], ['files', '📁 내 파일', '다운로드한 사진 · 영상'], ['lib', '📥 내 보관함', '담아 둔 사진 · 영상'],
-    ['scrap', '📰 스크랩', '신문 · 기사 캡처 사진'], ['text', '✍️ 글 넣기', opts.textHint || '쓰거나 붙여넣기'], ['funny', '😂 웃긴 말', '붙여넣으면 줄마다 자막'], ['music', '🎵 노래', 'MP3 · 음악 파일'],
+    ['scrap', '📰 스크랩', '신문 · 기사 캡처 사진'], ['text', '✍️ 글 넣기', opts.textHint || '쓰거나 붙여넣기'], ['funny', '😂 웃긴 말', '붙여넣으면 줄마다 자막'], ['music', '🎵 노래', 'MP3 · 음악 파일'], ['ref', '🎯 내 레퍼런스', '담아 둔 잘된 영상 (따라 할 본보기)', 0, 'wide'],
   ].filter(b => opts[b[0]]);
   return new Promise(res => {
-    const p = panel(`<h3>➕ 자료 넣기 <button type="button" data-x="close">✕</button></h3><div class="g2">${B.map(([k, l, s, hi]) => `<button type="button" class="op${hi ? ' hi' : ''}" data-k="${k}">${l}<small>${s}</small></button>`).join('')}</div>`);
+    const p = panel(`<h3>➕ 자료 넣기 <button type="button" data-x="close">✕</button></h3><div class="g2">${B.map(([k, l, s, hi, cls]) => `<button type="button" class="op${hi ? ' hi' : ''}${cls ? ' ' + cls : ''}" data-k="${k}">${l}<small>${s}</small></button>`).join('')}</div>`);
     p.box.addEventListener('click', async e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.x === 'close') { p.close(); res(null); return; }
@@ -121,6 +126,7 @@ function open(opts) {
       else if (k === 'files') { const fs = (await pickFiles('')).filter(media); if (fs.length) await askSave(fs); else if (fs) { /* 고른 게 없음 */ } res(fs.length ? { kind: 'files', files: fs } : null); }
       else if (k === 'lib') { const fs = await fromLib(); res(fs.length ? { kind: 'files', files: fs } : null); }
       else if (k === 'scrap') { const fs = (await pickFiles('image/*')).filter(media); if (fs.length) await askSave(fs); res(fs.length ? { kind: 'scrap', files: fs } : null); }
+      else if (k === 'ref') { const it = await refPick(); res(it ? { kind: 'ref', ref: it } : null); }
       else if (k === 'music') { const fs = await pickFiles('audio/*,.mp3,.m4a,.wav', false); res(fs.length ? { kind: 'music', files: fs } : null); }
       else { const r = await textInput(k, k === 'text' ? opts.textModes : null); res(r ? Object.assign({ kind: k }, r) : null); }
     });
@@ -162,5 +168,69 @@ function textCard(text, w, h) {
   const lh = fs * 1.45, y0 = c.height / 2 - (L.length - 1) * lh / 2; L.forEach((l, i) => x.fillText(l, c.width / 2, y0 + i * lh));
   return new Promise(r => c.toBlob(b => r(new File([b], '글화면_' + Date.now() + '.png', { type: 'image/png' })), 'image/png'));
 }
-g.BKKIT = { open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
+/* ═══ 🎯 내 레퍼런스 (🔎 레퍼런스에서 📌 담은 영상 · IndexedDB 'bk-editapp-ref') — 주소 · 메모만, 영상 파일은 아님 ═══ */
+const REFTAG = { hook: '🪝 첫 3초 후킹', cap: '💬 자막', music: '🎵 음악', len: '⏱ 길이', pace: '✂️ 장면 빠르기', flow: '🎬 구성', thumb: '🖼 썸네일' };
+const nview = n => { n = +n || 0; return n >= 1e8 ? (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억' : n >= 1e4 ? Math.round(n / 1e4).toLocaleString() + '만' : n.toLocaleString(); };
+function refAll() {
+  return new Promise(res => {
+    let r; try { r = indexedDB.open('bk-editapp-ref', 1); } catch (e) { return res([]); }
+    r.onupgradeneeded = () => r.result.createObjectStore('r');
+    r.onsuccess = () => { try { const q = r.result.transaction('r').objectStore('r').getAll(); q.onsuccess = () => res((q.result || []).sort((a, b) => (b.at || 0) - (a.at || 0))); q.onerror = () => res([]); } catch (e) { res([]); } };
+    r.onerror = () => res([]);
+  });
+}
+const REFHOME = (location.pathname.match(/^(.*?\/bk-edit\/)/) || [, '/bk-edit/'])[1] + 'ref.html';
+async function refPick() {
+  const all = await refAll();
+  return new Promise(res => {
+    const p = panel(`<h3>🎯 내 레퍼런스 <button type="button" data-x="close">✕</button></h3>
+      ${all.length ? '<input type="text" id="bkkRq" placeholder="🔍 찾기" style="width:100%;box-sizing:border-box;min-height:46px;border-radius:12px;border:1.5px solid #cbd5e1;padding:8px 12px;font-size:1rem;margin-bottom:8px">' : ''}
+      <div id="bkkRl"></div><div class="bkk-pg" id="bkkRp"></div>
+      <p style="color:#64748b;font-size:.85rem;margin:6px 0 0">💡 영상 파일이 아니라 <b>따라 할 본보기(주소 · 메모)</b>예요. <a href="${REFHOME}" style="color:#5b21b6;font-weight:800">🔎 레퍼런스에서 더 담기</a></p>`);
+    let pg = 0, q = '';
+    const draw = () => {
+      const L = all.filter(r => !q || ((r.title || '') + ' ' + (r.memo || '')).includes(q)), n = Math.max(1, Math.ceil(L.length / 10)); if (pg >= n) pg = n - 1;
+      p.box.querySelector('#bkkRl').innerHTML = L.slice(pg * 10, pg * 10 + 10).map(r => `<div class="bkk-rl"><i style="${r.thumb ? `background-image:url('${esc(r.thumb)}')` : ''}"></i><div style="min-width:0"><b>${esc(r.title || r.url)}</b><small>${r.views ? '👀 ' + nview(r.views) + '회 · ' : ''}${(r.tags || []).map(t => REFTAG[t] || '').filter(Boolean).join(' ')}</small></div><button type="button" data-id="${esc(r.id)}">고르기</button></div>`).join('')
+        || `<p style="text-align:center;color:#64748b;padding:14px 0">${all.length ? '찾는 레퍼런스가 없어요' : '아직 담은 영상이 없어요.<br>🔎 레퍼런스에서 📌 담기를 해 주세요.'}</p>`;
+      p.box.querySelector('#bkkRp').innerHTML = n < 2 ? '' : Array.from({ length: n }, (_, i) => `<button type="button" data-pg="${i}"${i === pg ? ' class="on"' : ''}>${i + 1}</button>`).join('');
+    };
+    draw();
+    const f = p.box.querySelector('#bkkRq'); if (f) f.addEventListener('input', () => { q = f.value.trim(); pg = 0; draw(); });
+    p.box.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.x === 'close') { p.close(); res(null); return; }
+      if (b.dataset.pg) { pg = +b.dataset.pg; draw(); return; }
+      if (b.dataset.id) { const it = all.find(r => r.id === b.dataset.id); p.close(); res(it || null); }
+    });
+  });
+}
+function refPlay(it) {
+  const yt = it.kind === 'yt' && it.vid;
+  const p = panel(`<h3>🎯 ${esc((it.title || '참고 영상').slice(0, 30))} <button type="button" data-x="close">✕</button></h3>
+    ${yt ? `<div class="bkk-play"><iframe src="https://www.youtube-nocookie.com/embed/${esc(it.vid)}?playsinline=1&autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>` : ''}
+    ${(it.tags && it.tags.length) || it.memo ? `<div class="bkk-tags" style="margin-top:8px">${(it.tags || []).map(t => `<span>${REFTAG[t] || t}</span>`).join('')}</div>${it.memo ? `<p style="margin:4px 0 0;background:#faf5ff;border-radius:10px;padding:8px">📝 ${esc(it.memo)}</p>` : ''}` : ''}
+    <a href="${esc(it.url)}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;min-height:50px;line-height:50px;border-radius:14px;background:#ede9fe;color:#5b21b6;font-weight:900;text-decoration:none">↗ ${yt ? '유튜브' : '원래 사이트'}에서 보기</a>`);
+  p.box.addEventListener('click', e => { if (e.target.closest('[data-x="close"]')) p.close(); });
+  p.el.addEventListener('click', e => { if (e.target === p.el) p.close(); });
+}
+/** 이 화면(쇼츠 · 영상)에 붙인 참고 영상: 저장 · 위 띠 · 머리 작은 단추 */
+const refKey = k => 'bkRefUse:' + k;
+function refGet(k) { try { return JSON.parse(localStorage.getItem(refKey(k)) || 'null'); } catch (e) { return null; } }
+function refSet(k, it) {
+  try { if (it) localStorage.setItem(refKey(k), JSON.stringify({ id: it.id, url: it.url, kind: it.kind, vid: it.vid, title: it.title, thumb: it.thumb, views: it.views, ch: it.ch, tags: it.tags || [], memo: it.memo || '' })); else localStorage.removeItem(refKey(k)); } catch (e) { /* 무시 */ }
+}
+function refBar(k, hosts, onClear) {
+  document.querySelectorAll('.bkk-refbar,.bkk-refchip').forEach(x => x.remove());
+  const it = refGet(k); if (!it) return null;
+  const head = document.querySelector('.bke-top');
+  if (head) { const c = document.createElement('button'); c.type = 'button'; c.className = 'bkk-refchip'; c.textContent = '🎯 참고'; c.title = it.title || ''; c.onclick = () => refPlay(it); const last = head.querySelector('.bke-menu,.bke-sp'); head.insertBefore(c, last || null); }
+  (hosts || []).filter(Boolean).forEach(h => {
+    const d = document.createElement('div'); d.className = 'bkk-refbar';
+    d.innerHTML = `<i style="${it.thumb ? `background-image:url('${esc(it.thumb)}')` : ''}"></i><div><small>🎯 참고 영상 (따라 할 본보기)</small><b>${esc(it.title || it.url)}</b></div><button type="button" data-r="play">▶ 보기</button><button type="button" class="x" data-r="x" aria-label="참고 영상 빼기">✕</button>`;
+    d.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; if (b.dataset.r === 'play') refPlay(it); else if (confirm('참고 영상을 뺄까요?\n(📌 내 레퍼런스에는 그대로 남아요)')) { refSet(k, null); refBar(k, hosts, onClear); if (onClear) onClear(); } });
+    h.insertBefore(d, h.firstChild);
+  });
+  return it;
+}
+g.BKKIT = { refPick, refPlay, refGet, refSet, refBar, open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
 })(window);

@@ -80,7 +80,7 @@ html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:1
 </style>
 </head>
 <body>
-<script>document.body.classList.add('bke-pre');(function(){var KEEP=['vtool','vlook','vlookPicked','vsec','len'];try{if(!/[?&]bkereset=/.test(location.search))return;var k='bk-edit-video-talk.v1',o={};try{var t=JSON.parse(localStorage.getItem(k)||'{}');KEEP.forEach(function(x){if(t[x]!=null)o[x]=t[x]})}catch(e){}localStorage.setItem(k,JSON.stringify(o));['bkeCopyIdx','bkeCopied'].forEach(function(x){localStorage.removeItem(x)});Object.keys(localStorage).filter(function(x){return x.indexOf('bkdraft:bk-edit/video')===0}).forEach(function(x){localStorage.removeItem(x)});try{indexedDB.deleteDatabase('bk-editapp-video')}catch(e){}history.replaceState(null,'',location.pathname)}catch(e){}})();</script>
+<script>document.body.classList.add('bke-pre');(function(){var KEEP=['vtool','vlook','vlookPicked','vsec','len'];try{if(!/[?&]bkereset=/.test(location.search))return;var k='bk-edit-video-talk.v1',o={};try{var t=JSON.parse(localStorage.getItem(k)||'{}');KEEP.forEach(function(x){if(t[x]!=null)o[x]=t[x]})}catch(e){}localStorage.setItem(k,JSON.stringify(o));['bkeCopyIdx','bkeCopied','bkRefUse:video'].forEach(function(x){localStorage.removeItem(x)});Object.keys(localStorage).filter(function(x){return x.indexOf('bkdraft:bk-edit/video')===0}).forEach(function(x){localStorage.removeItem(x)});try{indexedDB.deleteDatabase('bk-editapp-video')}catch(e){}history.replaceState(null,'',location.pathname)}catch(e){}})();</script>
   <script>window.BK_PROG="studio";</script><script src="../license.js"></script>
 <div class="app">
   <header class="top bke-top">
@@ -96,7 +96,7 @@ html,body{overflow-x:hidden}.panel .field>.seg{box-sizing:border-box;max-width:1
     <h2>① 어떤 주제로 만들까요?</h2>
     <button type="button" class="bke-topic" id="bkeTopicBtn">➕ 주제 고르기</button>
     <h2>② 자료를 넣어 주세요</h2>
-    <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 내 파일 · 내 보관함 · ✍️ 글</small></button>
+    <button type="button" class="bke-add" id="bkeAdd">➕ 자료 넣기<small>사진 · 영상 · 내 파일 · 내 보관함 · ✍️ 글 · 🎯 레퍼런스</small></button>
     <div class="bke-pend" id="bkePend" hidden></div>
     <button type="button" class="bke-done" id="bkeDone" disabled>✅ 선택 완료 → 편집하기<small id="bkeInfo">➕ 자료 넣기로 사진 · 기사 · 글을 넣어 주세요</small></button>
     <button type="button" class="bke-skip bke-reset" style="margin-bottom:8px;background:#fff1f2;color:#be123c">🔄 새로 시작 (예전 주제 · 자료 · 대본 · 장면 모두 지우기)</button>

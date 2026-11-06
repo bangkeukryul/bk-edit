@@ -54,10 +54,18 @@ $('fStart').addEventListener('change', e => {   // 보관함 「영상 시작」
   const fs = Array.from(e.target.files || []); e.target.value = ''; if (!fs.length) return;
   pushMedia(fs); toast(`📥 ${fs.length}개를 담았어요`, 2000);
 });
+/* 🎯 참고 영상 (내 레퍼런스): 쇼츠는 보면서 따라 하는 본보기 — 위 띠 · 머리 🎯 참고 */
+function shRefBar() { if (g.BKKIT) g.BKKIT.refBar('shorts', [$('start')]); }
+try {
+  const pk = JSON.parse(localStorage.getItem('bkeRefPick') || 'null');
+  if (pk && pk.url && /[?&]ref=1/.test(location.search) && g.BKKIT) { localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname); g.BKKIT.refSet('shorts', pk); setTimeout(() => toast('🎯 참고 영상을 붙였어요 — 위 띠에서 ▶ 다시 볼 수 있어요', 2600), 600); }
+} catch (e) { /* 무시 */ }
+setTimeout(shRefBar, 0);
 $('addBig').addEventListener('click', async () => {
   if (!g.BKKIT) return toast('자료 넣기를 열 수 없어요');
-  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
+  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, ref: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
   if (!r) return;
+  if (r.kind === 'ref') { g.BKKIT.refSet('shorts', r.ref); shRefBar(); toast('🎯 참고 영상을 붙였어요 — 위 띠 · 🎯 참고에서 ▶ 다시 볼 수 있어요', 2600); return; }
   if (r.kind === 'files') pushMedia(r.files);
   else if (r.kind === 'scrap') pushMedia(r.files, '_scrap');
   else if (r.kind === 'music') { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.files[0] }); renderPend(); }

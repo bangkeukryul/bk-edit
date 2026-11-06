@@ -201,7 +201,7 @@
     return `<div class="rv" data-id="${esc(v.id)}"><div class="th" data-a="${go}" role="button" style="${v.thumb ? `background-image:url('${esc(v.thumb)}')` : ''}"><em>${BADGE[v.kind] || ''}</em>${v.sec ? `<i>${mmss(v.sec)}</i>` : ''}${v.kind === 'yt' ? '<span class="pl">▶</span>' : ''}</div>
       <div style="min-width:0"><b data-a="${go}" role="button">${esc(v.title || v.url)}</b><small>${meta}</small>${st2(v)}
       <div class="acts">${v.kind === 'yt' ? `<button type="button" data-a="play">▶ 보기</button><a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 유튜브</a>` : `<a href="${esc(v.url)}" target="_blank" rel="noopener">↗ 열기</a>`}
-      ${mine ? '<button type="button" data-a="memo">📝 메모</button><button type="button" data-a="make">🎬 이걸로 만들기</button><button type="button" class="red" data-a="del">🗑</button>'
+      ${mine ? '<button type="button" data-a="memo">📝 메모</button><button type="button" data-a="make">🎬 이걸로 만들기 ▸</button><button type="button" class="red" data-a="del">🗑</button>'
         : `<button type="button" data-a="save" class="${saved ? 'on' : ''}">${saved ? '✅ 담았어요' : '📌 담기'}</button>`}</div></div>${memo}</div>`;
   }
   async function act(e, mine) {
@@ -230,8 +230,15 @@
     });
   }
   function make(v) {
-    LS('bkeRefPick', JSON.stringify({ url: v.url, title: v.title || '', tags: v.tags || [], memo: v.memo || '', at: Date.now() }));
-    location.href = 'video/?ref=1';
+    const s = sheet('🎬 어디에서 참고할까요?', `<p class="rhint" style="margin:0 0 8px">${esc(v.title || v.url)}</p>
+      <button type="button" class="big pri" data-go="shorts/edit.html" style="background:linear-gradient(135deg,#ec4899,#f97316)">🎵 쇼츠 만들기에서 참고</button>
+      <button type="button" class="big pri" data-go="video/" style="background:linear-gradient(135deg,#0ea5e9,#0d9488)">🎬 영상 만들기에서 참고 (AI 요청서에 들어가요)</button>
+      <p class="rhint">고른 곳 맨 위에 「🎯 참고 영상」 띠가 생겨요. ➕ 자료 넣기 → 🎯 내 레퍼런스에서도 고를 수 있어요.</p>`);
+    s.box.addEventListener('click', e => {
+      const b = e.target.closest('[data-go]'); if (!b) return;
+      LS('bkeRefPick', JSON.stringify({ id: v.id, url: v.url, kind: v.kind, vid: v.vid, title: v.title || '', thumb: v.thumb || '', views: v.views || 0, ch: v.ch || '', tags: v.tags || [], memo: v.memo || '', at: Date.now() }));
+      location.href = b.dataset.go + '?ref=1';
+    });
   }
 
   /* ── 📌 내 레퍼런스 ── */
