@@ -1,5 +1,5 @@
 /* sw.js — BK에딧 오프라인 캐시: 앱 파일은 인터넷 우선(업데이트 바로 반영) · 끊기면 저장본 */
-const VERSION = 'bk-editapp-v16';
+const VERSION = 'bk-editapp-v17';
 const FONTS = 'bk-editapp-fonts';
 /* 같은 주소(bangkeukryul.github.io)를 다른 BK 앱과 함께 쓰므로, 지울 때는 BK에딧 것('bk-editapp-'로 시작)만 지운다 */
 const APP = ['./', './index.html', './edit.css', './edit.js', './terms.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png',

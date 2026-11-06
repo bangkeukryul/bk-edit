@@ -105,8 +105,8 @@
     return j;
   }
   async function details(ids) {   // 조회수 · 길이 (1점)
-    if (!ids.length) return []; quota(1);
-    const j = await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 });
+    if (!ids.length) return [];
+    const j = await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(','), maxResults: 50 }); quota(1);   // 구글이 받아 준 뒤에만 세기
     return (j.items || []).map(v => ({ kind: 'yt', vid: v.id, id: 'yt:' + v.id, url: 'https://www.youtube.com/watch?v=' + v.id, title: v.snippet.title, ch: v.snippet.channelTitle, date: v.snippet.publishedAt, views: +(v.statistics && v.statistics.viewCount) || 0, sec: isoSec(v.contentDetails && v.contentDetails.duration), thumb: (v.snippet.thumbnails.high || v.snippet.thumbnails.medium || v.snippet.thumbnails.default || {}).url }));
   }
   async function onePage() {   // 검색 1번 (100점) → 조건에 맞는 것만
@@ -114,7 +114,7 @@
     if (OPT.sLen === 'short') p.videoDuration = 'short';
     if (+OPT.sWhen) p.publishedAfter = new Date(Date.now() - OPT.sWhen * 864e5).toISOString();
     if (NEXT) p.pageToken = NEXT;
-    quota(100); const j = await api('search', p); NEXT = j.nextPageToken || '';
+    const j = await api('search', p); quota(100); NEXT = j.nextPageToken || '';   // 키 잠금 등으로 막히면 점수를 세지 않아요
     const ids = (j.items || []).map(x => x.id && x.id.videoId).filter(id => id && !SEEN.has(id)); ids.forEach(id => SEEN.add(id));
     const list = (await details(ids)).filter(v => v.views >= +OPT.sMin && (OPT.sLen !== 'short' || (v.sec > 0 && v.sec <= 180)));
     if (OPT.sOrd === 'viewCount') list.sort((a, b) => b.views - a.views);
