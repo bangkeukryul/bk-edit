@@ -257,9 +257,9 @@ function drawAt(x, W, H, t, imgOf) {
   if (tr && A.lt < td) { const c = B.cur.getContext('2d'); layer(c); FX.transition(x, W, H, tr, B.hasPrev ? B.prev : null, B.cur, A.lt / td); }
   else layer(x);
   for (const f of on) if (f.type === 'efx') FX.overlay(x, W, H, f, t);
-  for (const f of on) if (f.type === 'mos') FX.mosaic(x, W, H, f);
-  for (const f of on) if (f.type === 'stk') FX.drawSticker(x, W, H, f, t);
-  for (const it of P.texts) if (t >= it.start && t < it.start + it.dur) { if (it.st) FX.drawCaption(x, W, H, it, t); else drawText(x, W, H, it, t); }
+  for (const f of on) if (f.type === 'mos') FX.mosaic(x, W, H, trkPos(f, t));
+  for (const f of on) if (f.type === 'stk') FX.drawSticker(x, W, H, trkPos(f, t), t);
+  for (const it0 of P.texts) if (t >= it0.start && t < it0.start + it0.dur) { const it = trkPos(it0, t); if (it.st) FX.drawCaption(x, W, H, it, t); else drawText(x, W, H, it, t); }
   B.has = true;
 }
 function pvSize() { const [a, b] = RATIOS[P.ratio]; const k = 720 / Math.max(a, b); return [Math.round(a * k / 2) * 2, Math.round(b * k / 2) * 2]; }
@@ -717,7 +717,7 @@ function fxSheet(tab) {
         <h4>색</h4>${chips('col', Object.entries(FX.COLORS), tx.col || '')}
         <h4>나타나는 모습</h4>${chips('anim', Object.entries(FX.ANIMS), tx.anim || '')}
         <h4>위치</h4>${chips('ypos', [['', '스타일대로'], [.16, '⬆ 위'], [.5, '가운데'], [.84, '⬇ 아래']], tx.y == null ? '' : tx.y)}
-        ${durChips(tx)}
+        ${durChips(tx)}${trkUI(tx)}
         <div class="two"><button type="button" class="big sec" data-x="newtext">＋ 새 글자</button><button type="button" class="big sec" data-x="delsel" style="color:#dc2626">🗑 지우기</button></div>
         <div class="note">빨간 선 자리부터 나와요. 미리보기 화면에서 글자를 <b>손가락으로 끌면</b> 위치가 옮겨져요.</div>`;
     } else if (FXTAB === 'stk') {
@@ -725,7 +725,7 @@ function fxSheet(tab) {
       h = `<h4>이모지 (누르면 빨간 선 자리에 들어가요)</h4><div class="emo">${FX.EMOJI.map(e => `<button type="button" data-e="${e}">${e}</button>`).join('')}</div>
         <h4>배지 · 글씨 상자</h4><div class="grid3">${Object.entries(FX.BADGES).map(([k, v]) => `<button type="button" data-bd="${k}">${esc(v[0])}</button>`).join('')}</div>
         ${st ? `<h4>고른 스티커</h4>${st.b && st.b !== 'bk' ? `<input type="text" id="bdt" value="${esc(st.t || FX.BADGES[st.b][3])}" placeholder="배지 글씨">` : ''}
-          <h4>크기</h4>${chips('size', [[.6, '작게'], [1, '보통'], [1.4, '크게'], [2, '아주 크게']], st.size || 1)}${durChips(st)}
+          <h4>크기</h4>${chips('size', [[.6, '작게'], [1, '보통'], [1.4, '크게'], [2, '아주 크게']], st.size || 1)}${durChips(st)}${trkUI(st)}
           <button type="button" class="big sec" data-x="delsel" style="color:#dc2626">🗑 이 스티커 지우기</button>` : ''}
         <div class="note">넣은 스티커는 미리보기 화면에서 <b>손가락으로 끌어</b> 옮겨요.</div>`;
     } else if (FXTAB === 'efx') {
@@ -751,7 +751,7 @@ function fxSheet(tab) {
       h = `<p class="muted">얼굴 · 번호판처럼 가릴 곳에 네모 무늬(모자이크)를 덮어요.</p>
         <button type="button" class="big pri" data-x="addmos">🫥 모자이크 넣기 (빨간 선 자리부터)</button>
         ${m ? `<h4>크기</h4>${chips('msz', [['s', '작게'], ['m', '보통'], ['l', '크게'], ['w', '가로로 길게']], m.sz || 'm')}
-          <h4>무늬 크기</h4>${chips('px', [[.02, '촘촘'], [.035, '보통'], [.055, '굵게']], m.px || .035)}${durChips(m)}
+          <h4>무늬 크기</h4>${chips('px', [[.02, '촘촘'], [.035, '보통'], [.055, '굵게']], m.px || .035)}${durChips(m)}${trkUI(m)}
           <button type="button" class="big sec" data-x="delsel" style="color:#dc2626">🗑 이 모자이크 지우기</button>` : ''}
         <div class="note">넣은 모자이크는 미리보기 화면에서 <b>손가락으로 끌어</b> 가릴 곳에 맞춰요.</div>`;
     }
@@ -769,6 +769,9 @@ function fxSheet(tab) {
     if (d.dataset.sf) { addFx({ type: 'sfx', k: d.dataset.sf, dur: FX.SFX_LEN[d.dataset.sf] || 1 }); render(); toast(FX.SFX[d.dataset.sf] + ' 넣었어요', 1400); return; }
     if (d.dataset.pv) { sfxPreview(d.dataset.pv); return; }
     const x = d.dataset.x;
+    if (x === 'trk' && F) { if (F.type === 'text' && !(it.t || '').trim()) return toast('먼저 글자를 써 주세요'); trkPick(F, false); return; }
+    if (x === 'trkre' && F) { trkPick(F, true); return; }
+    if (x === 'trkoff' && F) { once(); delete it.trk; save(); render(); toast('🎯 따라가기를 껐어요'); return; }
     if (x === 'newtext') { SEL = null; render(); setTimeout(() => { const t = body.querySelector('#tx'); if (t) t.focus(); }, 100); return; }
     if (x === 'delsel' && F) { once(); F.L.splice(F.L.indexOf(it), 1); SEL = null; save(); render(); return; }
     if (x === 'addmos') { const A = clipAt(T); addFx({ type: 'mos', dur: A ? Math.max(1, r1(A.st + clipLen(A.c) - T)) : 3, w: .34, h: .2, px: .035, sz: 'm' }); render(); return; }
@@ -809,11 +812,100 @@ async function sfxPreview(k) {
   cv.addEventListener('pointermove', e => {
     if (!d) return; const r = cv.getBoundingClientRect(), fx = clamp((e.clientX - r.left) / r.width, .02, .98), fy = clamp((e.clientY - r.top) / r.height, .03, .97);
     if (!d.moved) { snap(); d.moved = true; const it = d.F.o; if (T < it.start || T >= it.start + (it.dur || 0)) { T = it.start + .05; } }
-    d.F.o.x = r1(fx * 100) / 100; d.F.o.y = r1(fy * 100) / 100; drawPV();
+    d.F.o.x = r1(fx * 100) / 100; d.F.o.y = r1(fy * 100) / 100;
+    if (d.F.o.trk) { const c = trkAt(d.F.o.trk, T); d.F.o.trk.ox = d.F.o.x - c[0]; d.F.o.trk.oy = d.F.o.y - c[1]; }   // 🎯 따라가는 중이면 사람과의 거리만 바꿔요
+    drawPV();
   });
   const end = () => { if (!d) return; const m = d.moved; d = null; if (m) { clearTimeout(saveT); saveT = setTimeout(saveNow, 700); seekPreview(); } };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
 })();
+
+/* ═════════ 🎯 사람 따라가기 (글자 · 스티커 · 모자이크가 고른 사람을 따라다녀요) ═════════
+ * 휴대폰 안에서만 계산: 고른 네모 안 그림을 기억해 두고, 다음 장면마다 비슷한 곳을 찾아가요 (그림 맞추기).
+ * it.trk = { p: [[초, x, y], ...] 사람 가운데 자리(0~1), ox, oy: 사람과 글자 사이 거리 } */
+function trkAt(k, t) {
+  const p = k.p; if (!p || !p.length) return [.5, .5];
+  if (t <= p[0][0]) return [p[0][1], p[0][2]];
+  if (t >= p[p.length - 1][0]) return [p[p.length - 1][1], p[p.length - 1][2]];
+  let lo = 0, hi = p.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p[m][0] <= t) lo = m; else hi = m; }
+  const a = p[lo], b = p[hi], f = (t - a[0]) / Math.max(1e-6, b[0] - a[0]);
+  return [a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+function trkPos(it, t) {
+  if (!it.trk || !it.trk.p || !it.trk.p.length) return it;
+  const c = trkAt(it.trk, t);
+  return Object.assign({}, it, { x: clamp(c[0] + (it.trk.ox || 0), .03, .97), y: clamp(c[1] + (it.trk.oy || 0), .04, .96) });
+}
+function trkUI(it) {
+  if (!it) return '';
+  const on = it.trk && it.trk.p && it.trk.p.length;
+  return `<h4>🎯 사람 따라가기 <small class="muted">(🛠 시험 중)</small></h4>
+    ${on ? `<div class="two"><button type="button" class="big sec" data-x="trkre">🎯 여기서 다시 잡기</button><button type="button" class="big sec" data-x="trkoff">✖ 따라가기 끄기</button></div>
+      <div class="note">✅ 따라가는 중이에요. 중간에 다른 사람에게 넘어가면 그 장면으로 빨간 선을 옮기고 「🎯 여기서 다시 잡기」를 눌러요. 글자를 끌면 사람과의 거리가 바뀌어요.</div>`
+    : `<button type="button" class="big pri" data-x="trk">🎯 따라갈 사람 고르기</button><div class="note">예: 달리기 1레인 딸을 네모로 고르면 「우리 딸 화이팅!」이 계속 따라다녀요.</div>`}`;
+}
+async function trkPick(F, again) {
+  const it = F.o, cv = $('pv');
+  if (PLAY) pause();
+  if (T < it.start || T >= it.start + it.dur) T = it.start;
+  const A0 = clipAt(T); if (!A0) return toast('빨간 선 아래에 영상이 없어요');
+  closeSheet(); await seekPreview();
+  // 🖐 네모 그리기 판 (미리보기 위에 겹쳐요)
+  const rc = cv.getBoundingClientRect(), ov = document.createElement('div');
+  ov.style.cssText = `position:fixed;left:${rc.left}px;top:${rc.top}px;width:${rc.width}px;height:${rc.height}px;z-index:90;touch-action:none;cursor:crosshair`;
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;z-index:91;background:#111827ee;color:#fff;border-radius:14px;padding:10px 12px;font-weight:800;display:flex;gap:8px;align-items:center';
+  bar.innerHTML = '<span style="flex:1">🎯 따라갈 사람을 <b style="color:#fde047">손가락으로 네모</b>로 그려 주세요</span><button type="button" style="min-height:44px;padding:0 14px;border-radius:12px;border:0;background:#fff;color:#111;font-weight:900">취소</button>';
+  const boxEl = document.createElement('div'); boxEl.style.cssText = 'position:absolute;border:3px solid #fde047;box-shadow:0 0 0 2000px #0006;border-radius:6px;display:none';
+  ov.appendChild(boxEl); document.body.appendChild(ov); document.body.appendChild(bar);
+  const done = () => { ov.remove(); bar.remove(); };
+  const R = await new Promise(res => {
+    let s0 = null, cur = null;
+    bar.querySelector('button').onclick = () => res(null);
+    ov.addEventListener('pointerdown', e => { ov.setPointerCapture(e.pointerId); s0 = [e.clientX - rc.left, e.clientY - rc.top]; cur = null; });
+    ov.addEventListener('pointermove', e => { if (!s0) return; const p = [clamp(e.clientX - rc.left, 0, rc.width), clamp(e.clientY - rc.top, 0, rc.height)]; cur = [Math.min(s0[0], p[0]), Math.min(s0[1], p[1]), Math.abs(p[0] - s0[0]), Math.abs(p[1] - s0[1])]; Object.assign(boxEl.style, { display: 'block', left: cur[0] + 'px', top: cur[1] + 'px', width: cur[2] + 'px', height: cur[3] + 'px' }); });
+    ov.addEventListener('pointerup', () => { if (cur && cur[2] > 12 && cur[3] > 12) res([cur[0] / rc.width, cur[1] / rc.height, cur[2] / rc.width, cur[3] / rc.height]); else { s0 = null; boxEl.style.display = 'none'; toast('조금 더 크게 네모를 그려 주세요'); } });
+  });
+  done(); if (!R) { fxSheet(); return; }
+  // ⏳ 따라가기 계산
+  const t0 = T, tEnd = Math.min(it.start + it.dur, A0.st + clipLen(A0.c)) - .01;   // 이 장면이 끝날 때까지
+  const prog = document.createElement('div');
+  prog.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;z-index:91;background:#111827ee;color:#fff;border-radius:14px;padding:12px;font-weight:800;display:flex;gap:8px;align-items:center';
+  prog.innerHTML = '<span style="flex:1">🎯 따라가는 중… <b>0%</b></span><button type="button" style="min-height:44px;padding:0 14px;border-radius:12px;border:0;background:#fff;color:#111;font-weight:900">멈추기</button>';
+  document.body.appendChild(prog); let stop = false; prog.querySelector('button').onclick = () => { stop = true; };
+  const [pw, ph] = pvSize(), k = 360 / Math.max(pw, ph), W = Math.round(pw * k), H = Math.round(ph * k);
+  const wc = document.createElement('canvas'); wc.width = W; wc.height = H; const wx = wc.getContext('2d', { willReadFrequently: true });
+  const grab = async t => { const A = clipAt(t); if (!A) return null; if (A.c.kind === 'video') { const s = SRC.get(A.c.src); if (s) await seekV(s.el, srcTime(A.c, A.lt)); } wx.fillStyle = '#000'; wx.fillRect(0, 0, W, H); drawClip(wx, W, H, A); return wx.getImageData(0, 0, W, H).data; };
+  let bx = Math.round(R[0] * W), by = Math.round(R[1] * H), bw = Math.max(6, Math.round(R[2] * W)), bh = Math.max(6, Math.round(R[3] * H));
+  const st = Math.max(1, Math.round(Math.max(bw, bh) / 28));   // 큰 네모는 띄엄띄엄 비교 (빠르게)
+  const cut = (d, x0, y0) => { const o = []; for (let y = 0; y < bh; y += st) for (let x = 0; x < bw; x += st) { const i = ((y0 + y) * W + (x0 + x)) * 4; o.push(d[i], d[i + 1], d[i + 2]); } return o; };
+  let d = await grab(t0), tm = cut(d, bx, by); const tm0 = tm.slice();
+  const pts = [[r1(t0 * 100) / 100, (bx + bw / 2) / W, (by + bh / 2) / H]], dt = 1 / 12;
+  let vx = 0, vy = 0;
+  for (let t = t0 + dt; t <= tEnd && !stop; t += dt) {
+    d = await grab(t); if (!d) break;
+    const px = bx + vx, py = by + vy, rad = Math.max(10, Math.round(Math.max(bw, bh) * .45));
+    let best = Infinity, nx = bx, ny = by;
+    const score = (x0, y0) => { if (x0 < 0 || y0 < 0 || x0 + bw > W || y0 + bh > H) return Infinity; let sc = 0, j = 0; for (let y = 0; y < bh; y += st) for (let x = 0; x < bw; x += st) { const i = ((y0 + y) * W + (x0 + x)) * 4; sc += Math.abs(d[i] - tm[j]) + Math.abs(d[i + 1] - tm[j + 1]) + Math.abs(d[i + 2] - tm[j + 2]); j += 3; } return sc + (Math.abs(x0 - px) + Math.abs(y0 - py)) * j * .15; };
+    for (let y = Math.round(py - rad); y <= py + rad; y += 2) for (let x = Math.round(px - rad); x <= px + rad; x += 2) { const sc = score(x, y); if (sc < best) { best = sc; nx = x; ny = y; } }
+    const cx = nx, cy = ny; for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 2; x <= cx + 2; x++) { const sc = score(x, y); if (sc < best) { best = sc; nx = x; ny = y; } }
+    vx = (nx - bx) * .6 + vx * .4; vy = (ny - by) * .6 + vy * .4; bx = nx; by = ny;
+    const now = cut(d, bx, by); for (let j = 0; j < tm.length; j++) tm[j] = tm[j] * .8 + now[j] * .12 + tm0[j] * .08;   // 조금씩 새 모습 배우기 (처음 모습도 기억)
+    pts.push([r1(t * 100) / 100, (bx + bw / 2) / W, (by + bh / 2) / H]);
+    prog.querySelector('b').textContent = Math.round((t - t0) / Math.max(.01, tEnd - t0) * 100) + '%';
+    if (pts.length % 6 === 0) { T = t; drawPV(); }   // 가끔 화면도 보여 주기
+  }
+  prog.remove();
+  for (let i = 1; i < pts.length - 1; i++) { pts[i][1] = (pts[i - 1][1] + pts[i][1] * 2 + pts[i + 1][1]) / 4; pts[i][2] = (pts[i - 1][2] + pts[i][2] * 2 + pts[i + 1][2]) / 4; }   // 흔들림 줄이기
+  pts.forEach(p => { p[1] = Math.round(p[1] * 1000) / 1000; p[2] = Math.round(p[2] * 1000) / 1000; });
+  snap();
+  const old = again && it.trk && it.trk.p ? it.trk.p.filter(p => p[0] < t0 - .01) : [];
+  const ox = it.trk && again ? it.trk.ox : 0, oy = it.trk && again ? it.trk.oy : (F.o.type === 'mos' ? 0 : -(R[3] / 2) - .07);
+  it.trk = { p: old.concat(pts), ox, oy };
+  if (F.o.type === 'mos' && !again) { it.w = r1(R[2] * 100) / 100; it.h = r1(R[3] * 100) / 100; }
+  T = t0; clearTimeout(saveT); saveT = setTimeout(saveNow, 300); await seekPreview(); renderTL();
+  toast(stop ? '🎯 멈춘 곳까지 따라가요' : '🎯 따라가기 완료! ▶ 재생해서 확인해 보세요', 3200);
+}
 
 /* ═════════ ⚙️ 더 보기 ═════════ */
 function moreSheet() {

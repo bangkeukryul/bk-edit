@@ -136,10 +136,25 @@
   window.__bkeRef = () => {
     const link = ($('bkeRefLink') && $('bkeRefLink').value.trim()) || '';
     if (!REF.files.length && !link) return '';
+    const rm = (window.__bkeRefMemo || '').trim();
     const what = [...document.querySelectorAll('#bkeRefWhat button[aria-pressed=true]')].map(b => WHAT[b.dataset.v]).filter(Boolean);
-    return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 봐 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 형식 · 흐름만 비슷하게 하고, 문장 · 장면 · 내용은 내 자료로 새로 만들어 줘 (그대로 베끼지 말 것).`;
+    return `\n\n[참고 영상]\n${REF.files.length ? '- 첨부한 참고 영상(과 장면 모아보기 그림)을 봐 줘.\n' : ''}${link ? `- 참고 링크: ${link}\n` : ''}${rm ? `- 내가 본 점: ${rm}\n` : ''}- 따라 할 점: ${what.join(' · ') || '전체적인 느낌'}\n- 형식 · 흐름만 비슷하게 하고, 문장 · 장면 · 내용은 내 자료로 새로 만들어 줘 (그대로 베끼지 말 것).`;
   };
   window.__bkeRefFiles = () => REF.files.concat(REF.sheet ? [REF.sheet] : []);
+  /* 🔎 레퍼런스에서 「🎬 이걸로 만들기」로 왔을 때: 링크 · 따라 할 점 · 메모를 참고 영상 칸에 */
+  try {
+    const pk = JSON.parse(localStorage.getItem('bkeRefPick') || 'null');
+    if (pk && pk.url && /[?&]ref=1/.test(location.search)) {
+      localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname);
+      if ($('bkeRefLink')) $('bkeRefLink').value = pk.url;
+      const map = { hook: 'hook', cap: 'cap', pace: 'pace', flow: 'flow' }, on = (pk.tags || []).map(t => map[t]).filter(Boolean);
+      if (on.length) document.querySelectorAll('#bkeRefWhat button').forEach(b => b.setAttribute('aria-pressed', String(on.includes(b.dataset.v))));
+      const extra = (pk.tags || []).filter(t => !map[t]).map(t => ({ music: '음악', len: '길이', thumb: '썸네일' }[t])).filter(Boolean);
+      window.__bkeRefMemo = [pk.title ? `「${pk.title}」` : '', extra.length ? `(${extra.join(' · ')}도 참고)` : '', pk.memo || ''].filter(Boolean).join(' ');
+      if ($('bkeRef')) $('bkeRef').open = true;
+      setTimeout(() => alert('🔎 레퍼런스를 「🎞 참고 영상」에 넣었어요.\n\n주제 · 자료를 넣고 ✅ 선택 완료 → 대본 탭에서 AI에게 보낼 때 함께 들어가요.'), 600);
+    }
+  } catch (e) { /* 무시 */ }
   showFiles(); setTimeout(sync, 300); sync(); render();
   $('bkeTopicBtn').addEventListener('click', () => setTimeout(render, 50)); document.addEventListener('click', e => { if (e.target.closest('.bkk-dim')) setTimeout(render, 80); });
 })();

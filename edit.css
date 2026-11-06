@@ -179,3 +179,4 @@ body.editing{background:var(--ed)}body.editing .foot{display:none}
 .pmini[hidden]{display:none!important}
 .pc .acts{display:flex;flex-wrap:nowrap;gap:4px}.pc .acts button{white-space:nowrap;padding:6px 8px;font-size:.85rem;min-height:40px}
 .ppages{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:10px 0 4px}.ppages button{min-width:44px;min-height:44px;border-radius:12px;border:1.5px solid #cbd5e1;background:#fff;color:#174782;font-weight:900;font-size:1rem}.ppages button.on{background:#0d9488;border-color:#0d9488;color:#fff}
+.m4{background:linear-gradient(135deg,#7c3aed,#db2777)}
