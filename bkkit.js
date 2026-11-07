@@ -133,7 +133,7 @@ function open(opts) {
       else if (k === 'lib') { const fs = await fromLib(); res(fs.length ? { kind: 'files', files: fs } : null); }
       else if (k === 'scrap') { const fs = (await pickFiles('image/*')).filter(media); if (fs.length) await askSave(fs); res(fs.length ? { kind: 'scrap', files: fs } : null); }
       else if (k === 'ref') { const it = await refPick(); res(it ? { kind: 'ref', ref: it } : null); }
-      else if (k === 'music') { const fs = await pickFiles('audio/*,.mp3,.m4a,.wav', false); res(fs.length ? { kind: 'music', files: [], music: fs } : null); }
+      else if (k === 'music') { const box = await musicBox(); const it = box.length ? await musicPick(box) : 'file'; if (it === 'file') { const fs = await pickFiles('audio/*,.mp3,.m4a,.wav', false); res(fs.length ? { kind: 'music', files: [], music: fs } : null); } else res(it ? musicOut(it) : null); }
       else { const r = await textInput(k, k === 'text' ? opts.textModes : null); res(r ? Object.assign({ kind: k }, r) : null); }
     });
   });
@@ -206,6 +206,30 @@ function refAll() {
     r.onerror = () => res([]);
   });
 }
+/* ═══ 🎵 BK뮤직 노래함 (BK톡톡 · 같은 주소라 이 휴대폰에서 바로 읽어요 · 읽기만 해요) ═══ */
+function musicBox() {
+  return new Promise(res => {
+    let r; try { r = indexedDB.open('bk-music'); } catch (e) { return res([]); }
+    r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (e) { /* 새로 만들지 않기 */ } };
+    r.onsuccess = () => { const d = r.result; if (!d.objectStoreNames.contains('songs')) { d.close(); return res([]); } try { const q = d.transaction('songs').objectStore('songs').getAll(); q.onsuccess = () => { d.close(); res((q.result || []).filter(s => s.blob).sort((a, b) => (b.at || 0) - (a.at || 0))); }; q.onerror = () => { d.close(); res([]); }; } catch (e) { d.close(); res([]); } };
+    r.onerror = () => res([]);
+  });
+}
+function dataFile(u, name) { try { const m = /^data:([^;]+);base64,(.*)$/.exec(u || ''); if (!m) return null; const b = atob(m[2]), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return new File([a], name, { type: m[1] }); } catch (e) { return null; } }
+function musicOut(s) {
+  const ext = (s.name && (s.name.match(/\.[^.]+$/) || [])[0]) || '.' + (((s.type || 'audio/mpeg').split('/')[1] || 'mp3').replace('mpeg', 'mp3'));
+  const f = new File([s.blob], (s.title || '노래').replace(/[\\/:*?"<>|]/g, '') + ext, { type: s.type || s.blob.type || 'audio/mpeg' });
+  return { kind: 'music', files: [], music: [f], title: s.title || '', lyrics: s.lyrics || '', cover: s.thumb ? dataFile(s.thumb, (s.title || '노래') + '_표지.jpg') : null };
+}
+function musicPick(box) {
+  return new Promise(res => {
+    const p = panel(`<h3>🎵 어떤 노래를 넣을까요? <button type="button" data-x="close">✕</button></h3>
+      <div style="display:grid;gap:6px;max-height:52vh;overflow:auto">${box.map((s, i) => `<button type="button" class="bkk-rl" data-i="${i}" style="text-align:left;background:#fff"><i style="${s.thumb ? `background-image:url('${s.thumb}')` : ''};display:flex;align-items:center;justify-content:center;color:#fff">${s.thumb ? '' : '🎵'}</i><div style="min-width:0"><b>${esc(s.title || '노래')}</b><small>${s.lyrics ? '📝 가사 있음 · 자동으로 맞춰요' : '가사 없음'}</small></div><span style="font-weight:900;color:#5b21b6">고르기</span></button>`).join('')}</div>
+      <button type="button" class="op" data-f="1" style="width:100%;margin-top:8px;min-height:56px">📁 휴대폰에서 MP3 고르기</button>
+      <p style="color:#64748b;font-size:.85rem;margin:6px 0 0">🎵 BK뮤직 💾 내 노래함에 넣은 노래예요. 가사가 있으면 노래방 자막이 자동으로 들어가요.</p>`);
+    p.box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.x) { p.close(); return res(null); } if (b.dataset.f) { p.close(); return res('file'); } if (b.dataset.i != null) { p.close(); res(box[+b.dataset.i]); } });
+  });
+}
 const REFHOME = (location.pathname.match(/^(.*?\/bk-edit\/)/) || [, '/bk-edit/'])[1] + 'ref.html';
 async function refPick() {
   const all = await refAll();
@@ -261,5 +285,5 @@ function refBar(k, hosts, onClear) {
   });
   return it;
 }
-g.BKKIT = { REFWHAT, REFLVL, REFTAG, whatHTML, refFile, refPick, refPlay, refGet, refSet, refBar, open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
+g.BKKIT = { musicBox, musicOut, REFWHAT, REFLVL, REFTAG, whatHTML, refFile, refPick, refPlay, refGet, refSet, refBar, open, askSave, fromLib, textInput, dictate, stop, textCard, pickFiles };
 })(window);

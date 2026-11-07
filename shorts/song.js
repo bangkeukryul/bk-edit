@@ -120,26 +120,96 @@ function spectrum(id) {
   };
   setTimeout(chunk, 0); return null;
 }
-const COLS = { rainbow: null, neon: ['#22d3ee', '#a855f7', '#ec4899'], white: ['#ffffff', '#ffffff', '#e2e8f0'], gold: ['#fde68a', '#f59e0b', '#fbbf24'] };
+const COLS = { rainbow: null, neon: ['#22d3ee', '#a855f7', '#ec4899'], white: ['#ffffff', '#ffffff', '#e2e8f0'], gold: ['#fde68a', '#f59e0b', '#fbbf24'], pink: ['#fbcfe8', '#f472b6', '#ec4899'], sky: ['#bae6fd', '#38bdf8', '#0ea5e9'] };
 function colAt(c, i, n, t) { if (c === 'rainbow') return `hsl(${(i / n * 300 + t * 40) % 360},95%,62%)`; const L = COLS[c] || COLS.neon; return L[Math.floor(i / n * L.length) % L.length]; }
+/** 🎶 노래 스티커: 영상 어디든 · 손가락으로 옮기고 두 손가락으로 크기 · 노래 따라 / 그냥 출렁 */
+const STYLES = [['bars', '📊 막대'], ['mirror', '🔊 대칭'], ['wave', '〰 물결'], ['line', '📈 주파수 선'], ['ring', '⭕ 둥근 막대'], ['heart', '💗 하트 두근'], ['dots', '⚪ 점 통통'], ['notes', '🎵 음표'], ['ripple', '🌊 퍼지는 원']];
+let BOX = null;   // 마지막으로 그린 스티커 자리 (손가락으로 잡기)
+function vizVals(t, M, V) {
+  let sp = null; if (V.mode !== 'auto' && M.kind === 'file' && M.fileId) sp = spectrum(M.fileId);
+  if (sp) { const dur = sp.n / FPS, f = clamp(Math.floor((dur > 0 ? t % dur : 0) * FPS), 0, sp.n - 1); return i => sp.v[f * NB + (i % NB)] / 255; }
+  const beat = Math.pow(Math.abs(Math.sin(t * Math.PI * 2)), 3);   // 그냥 출렁 (1초에 두 번 쿵)
+  return i => clamp(.25 + .35 * Math.abs(Math.sin(t * (3 + (i % 7) * .9) + i * 1.7)) + .35 * beat * (1 - (i % NB) / NB * .6), 0, 1);
+}
 function drawViz(x, W, H, t) {
+  BOX = null;
   const P = ED.P, V = P && P.viz; if (!V || !V.on) return;
-  const M = P.music; if (M.kind !== 'file' || !M.fileId) return;
-  const sp = spectrum(M.fileId); if (!sp) return;
-  const dur = sp.n / FPS, mt = dur > 0 ? t % dur : 0, f = clamp(Math.floor(mt * FPS), 0, sp.n - 1), v = i => sp.v[f * NB + i] / 255;
-  const m = Math.min(W, H), cy = (V.pos === 'top' ? .3 : V.pos === 'mid' ? .5 : .74) * H, hmax = m * .16 * (V.size || 1), k = V.k || 'bars', c = V.col || 'rainbow';
-  x.save(); x.shadowColor = c === 'white' ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.35)'; x.shadowBlur = m * .012; x.globalAlpha = .95;
+  const v = vizVals(t, P.music, V), m = Math.min(W, H), k = V.k || 'bars', c = V.col || 'rainbow', sz = V.size || 1;
+  const cx = (V.x == null ? .5 : V.x) * W, cy = (V.y == null ? ({ top: .3, mid: .5, bottom: .74 }[V.pos] || .74) : V.y) * H, bw0 = W * .7 * sz, hmax = m * .16 * sz;
+  x.save(); x.globalAlpha = V.alpha || .95; x.shadowColor = c === 'white' ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.35)'; x.shadowBlur = m * .012;
+  let bw = bw0, bh = hmax * 2;
   if (k === 'bars' || k === 'mirror') {
-    const n = NB, gap = W * .006, bw = (W * .84 - gap * (n - 1)) / n, x0 = W * .08;
-    for (let i = 0; i < n; i++) { const h = Math.max(m * .006, v(i) * hmax); x.fillStyle = colAt(c, i, n, t); const xx = x0 + i * (bw + gap); if (k === 'mirror') x.fillRect(xx, cy - h / 2, bw, h); else x.fillRect(xx, cy - h, bw, h); }
-  } else if (k === 'wave') {
-    x.lineWidth = m * .008; x.lineJoin = 'round';
-    for (let L = 0; L < 3; L++) { x.beginPath(); for (let i = 0; i <= 120; i++) { const p = i / 120, b = Math.min(NB - 1, Math.floor(p * NB)), amp = v(b) * hmax * (.55 - L * .15), y = cy + Math.sin(p * Math.PI * (6 + L * 2) + t * (5 + L)) * amp; const xx = W * .06 + p * W * .88; if (i) x.lineTo(xx, y); else x.moveTo(xx, y); } x.strokeStyle = colAt(c, L * 10, 30, t); x.globalAlpha = .9 - L * .2; x.stroke(); }
-  } else if (k === 'circle') {
-    const r = m * .14, n = NB * 2, ccy = V.pos === 'bottom' || !V.pos ? H * .62 : cy;
-    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 - Math.PI / 2, h = Math.max(m * .01, v(i % NB) * hmax * .8); x.strokeStyle = colAt(c, i, n, t); x.lineWidth = m * .012; x.lineCap = 'round'; x.beginPath(); x.moveTo(W / 2 + Math.cos(a) * r, ccy + Math.sin(a) * r); x.lineTo(W / 2 + Math.cos(a) * (r + h), ccy + Math.sin(a) * (r + h)); x.stroke(); }
+    const n = 24, gap = bw * .012, w = (bw - gap * (n - 1)) / n, x0 = cx - bw / 2;
+    for (let i = 0; i < n; i++) { const h = Math.max(m * .006, v(i) * hmax); x.fillStyle = colAt(c, i, n, t); const xx = x0 + i * (w + gap); if (k === 'mirror') x.fillRect(xx, cy - h, w, h * 2); else x.fillRect(xx, cy + hmax - h, w, h); }
+  } else if (k === 'wave' || k === 'line') {
+    x.lineWidth = m * .008 * Math.max(.6, sz); x.lineJoin = 'round';
+    const layers = k === 'wave' ? 3 : 1;
+    for (let L = 0; L < layers; L++) { x.beginPath(); for (let i = 0; i <= 120; i++) { const p = i / 120, b = Math.floor(p * NB), amp = v(b) * hmax * (k === 'line' ? .9 : .7 - L * .18), y = k === 'line' ? cy + Math.sin(p * Math.PI * 22 + t * 9) * amp * Math.sin(p * Math.PI) : cy + Math.sin(p * Math.PI * (6 + L * 2) + t * (5 + L)) * amp; const xx = cx - bw / 2 + p * bw; if (i) x.lineTo(xx, y); else x.moveTo(xx, y); } x.strokeStyle = colAt(c, L * 10, 30, t); x.globalAlpha = (V.alpha || .95) * (1 - L * .25); x.stroke(); }
+  } else if (k === 'ring') {
+    const r = m * .1 * sz, n = 48; bw = bh = (r + hmax) * 2;
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 - Math.PI / 2, h = Math.max(m * .01, v(i) * hmax * .9); x.strokeStyle = colAt(c, i, n, t); x.lineWidth = m * .011 * sz; x.lineCap = 'round'; x.beginPath(); x.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); x.lineTo(cx + Math.cos(a) * (r + h), cy + Math.sin(a) * (r + h)); x.stroke(); }
+  } else if (k === 'heart') {
+    const s = m * .12 * sz * (.85 + .35 * v(2)); bw = bh = s * 2.4; x.fillStyle = colAt(c, 3, 10, t); x.beginPath(); x.moveTo(cx, cy + s * .9);
+    x.bezierCurveTo(cx - s * 1.6, cy - s * .2, cx - s * .7, cy - s * 1.3, cx, cy - s * .45); x.bezierCurveTo(cx + s * .7, cy - s * 1.3, cx + s * 1.6, cy - s * .2, cx, cy + s * .9); x.fill();
+  } else if (k === 'dots') {
+    const n = 9, step = bw / n; for (let i = 0; i < n; i++) { const h = v(i * 3) * hmax, r = m * .022 * sz; x.fillStyle = colAt(c, i, n, t); x.beginPath(); x.arc(cx - bw / 2 + step * (i + .5), cy + hmax * .5 - h, r, 0, Math.PI * 2); x.fill(); }
+  } else if (k === 'notes') {
+    x.textAlign = 'center'; x.textBaseline = 'middle'; const N = ['♪', '♫', '♩', '♬'];
+    for (let i = 0; i < 8; i++) { const ph = (t * .35 + i / 8) % 1, xx = cx - bw / 2 + ((i * 37) % 100) / 100 * bw, yy = cy + hmax - ph * hmax * 2, fs = m * (.05 + .03 * v(i * 4)) * sz; x.globalAlpha = (V.alpha || .95) * Math.sin(ph * Math.PI); x.fillStyle = colAt(c, i, 8, t); x.font = `900 ${Math.round(fs)}px sans-serif`; x.fillText(N[i % 4], xx, yy); }
+  } else if (k === 'ripple') {
+    const R = m * .16 * sz; bw = bh = R * 2.2; x.lineWidth = m * .008 * sz;
+    for (let i = 0; i < 4; i++) { const ph = (t * .6 + i / 4) % 1; x.globalAlpha = (V.alpha || .95) * (1 - ph); x.strokeStyle = colAt(c, i, 4, t); x.beginPath(); x.arc(cx, cy, R * (.2 + ph * .9) * (.9 + .2 * v(i * 5)), 0, Math.PI * 2); x.stroke(); }
   }
   x.restore();
+  BOX = { l: cx - bw / 2, t: cy - bh / 2, w: bw, h: bh, W, H };
+}
+/* 손가락으로 옮기기 · 두 손가락으로 크기 (미리보기 화면) */
+(function () {
+  const cv = document.getElementById('cv'); if (!cv) return;
+  const pts = new Map(); let st = null;
+  const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener('pointerdown', e => {
+    const P = ED.P, V = P && P.viz; if (!V || !V.on || !BOX) return;
+    const [px, py] = pos(e), m = Math.max(16, Math.min(BOX.W, BOX.H) * .05);
+    if (!pts.size && !(px >= BOX.l - m && px <= BOX.l + BOX.w + m && py >= BOX.t - m && py <= BOX.t + BOX.h + m)) return;
+    pts.set(e.pointerId, [px, py]); e.stopImmediatePropagation(); e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (er) { /* 무시 */ }
+    const L = [...pts.values()];
+    st = L.length >= 2 ? { pinch: Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]), size: V.size || 1 } : { sx: px, sy: py, ox: V.x == null ? (BOX.l + BOX.w / 2) / BOX.W : V.x, oy: V.y == null ? (BOX.t + BOX.h / 2) / BOX.H : V.y };
+  }, true);
+  cv.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !st) return; e.stopImmediatePropagation();
+    const V = ED.P.viz, p = pos(e); pts.set(e.pointerId, p); const L = [...pts.values()];
+    if (L.length >= 2 && st.pinch) V.size = clamp(Math.round(st.size * Math.hypot(L[0][0] - L[1][0], L[0][1] - L[1][1]) / st.pinch * 100) / 100, .4, 2.6);
+    else if (st.sx != null) { V.x = clamp(st.ox + (p[0] - st.sx) / cv.width, .05, .95); V.y = clamp(st.oy + (p[1] - st.sy) / cv.height, .05, .95); }
+    if (ED.redraw) ED.redraw();
+  }, true);
+  const up = e => { if (!pts.has(e.pointerId)) return; e.stopImmediatePropagation(); pts.delete(e.pointerId); if (!pts.size) { st = null; if (ED.commit) ED.commit(); } else { const V = ED.P.viz, L = [...pts.values()]; st = { sx: L[0][0], sy: L[0][1], ox: V.x, oy: V.y }; } };
+  cv.addEventListener('pointerup', up, true); cv.addEventListener('pointercancel', up, true);
+})();
+
+/* ═════════ 🎯 가사 박자 자동 맞추기 (목소리 나오는 곳 찾기) ═════════ */
+function vocalRegions(buf) {
+  const sr = buf.sampleRate, N = 2048, hop = Math.floor(sr * .1), n = Math.floor((buf.length - N) / hop), d0 = buf.getChannelData(0), d1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : d0;
+  const lo = Math.floor(300 / sr * N), hi = Math.floor(3400 / sr * N), E = new Float32Array(Math.max(0, n)), re = new Float32Array(N), im = new Float32Array(N);
+  for (let f = 0; f < n; f++) {
+    const a = f * hop; for (let i = 0; i < N; i++) { re[i] = ((d0[a + i] || 0) + (d1[a + i] || 0)) * .5; im[i] = 0; }
+    fft(re, im); let mid = 0, all = 1e-9; for (let k = 2; k < N / 2; k++) { const p = re[k] * re[k] + im[k] * im[k]; all += p; if (k >= lo && k <= hi) mid += p; }
+    E[f] = Math.sqrt(mid) * (mid / all);   // 사람 목소리 대역이 크고 많이 차지할수록
+  }
+  const S = E.map((_, i) => { let s = 0, c = 0; for (let j = Math.max(0, i - 4); j <= Math.min(n - 1, i + 4); j++) { s += E[j]; c++; } return s / c; });
+  const sorted = Array.from(S).sort((p, q) => p - q), th = sorted[Math.floor(n * .45)] || 0;
+  const R = []; let s0 = -1;
+  for (let i = 0; i <= n; i++) { const on = i < n && S[i] > th; if (on && s0 < 0) s0 = i; if (!on && s0 >= 0) { R.push([s0 * .1, i * .1]); s0 = -1; } }
+  const M = []; R.forEach(r => { const l = M[M.length - 1]; if (l && r[0] - l[1] < 1.2) l[1] = r[1]; else M.push(r.slice()); });
+  return M.filter(r => r[1] - r[0] >= 1.5);
+}
+/** 가사 줄마다 시간 넣기: 글자 수만큼 목소리 구간에 차례로 나눠 담아요 */
+function autoSync(buf, lines) {
+  const R = vocalRegions(buf); if (!R.length || !lines.length) return false;
+  const wt = lines.map(l => Math.max(2, (String(l.text).match(/[가-힣A-Za-z0-9]/g) || []).length) + 2), W = wt.reduce((p, q) => p + q, 0), A = R.reduce((p, r) => p + r[1] - r[0], 0);
+  const at = pos => { let left = pos / W * A; for (const [s, e] of R) { if (left <= e - s) return s + left; left -= e - s; } return R[R.length - 1][1]; };
+  let cum = 0; lines.forEach((l, i) => { l.t = Math.round(at(cum) * 10) / 10; cum += wt[i]; });
+  return true;
 }
 
 /* ═════════ 📌 위 큰 제목 ═════════ */
@@ -168,9 +238,10 @@ function ui(P, h) {
   return `<div class="grp" style="background:#f5f3ff;border:2px solid #c4b5fd;border-radius:14px;padding:10px 12px;margin-top:10px"><h3 style="margin-top:0">🎵 노래 쇼츠 꾸미기</h3>
     ${has ? `<button type="button" data-a="songcut" class="pri" style="width:100%">✂️ 노래 구간 고르기 <small style="display:block;font-weight:600">${c ? `지금: ${c.mode === 'hl' ? '🎯 하이라이트' : c.mode === 'max3' ? '⏱ 3분까지' : '🎼 플레이리스트 한 곡'} ${fmt(c.s)}~${fmt(c.e)}` : '지금: 🎶 전체 곡'} · 하이라이트 · 3분까지 · 플레이리스트 나누기</small></button>`
       : '<p class="hint">📁 위에서 <b>내 노래(MP3)</b>를 넣으면 ✂️ 구간 고르기 · 📊 움직이는 막대를 쓸 수 있어요.</p>'}
-    <h4>📊 노래에 맞춰 움직이는 막대</h4><div class="chips">${btn('viz', 'off', '끄기', !V.on)}${btn('viz', 'bars', '📊 막대', V.on && V.k === 'bars')}${btn('viz', 'wave', '〰 물결', V.on && V.k === 'wave')}${btn('viz', 'mirror', '🔊 대칭', V.on && V.k === 'mirror')}${btn('viz', 'circle', '⭕ 동그라미', V.on && V.k === 'circle')}</div>
-    ${V.on ? `<div class="chips">${[['rainbow', '🌈 무지개'], ['neon', '💜 네온'], ['white', '🤍 흰색'], ['gold', '✨ 금색']].map(([k, l]) => btn('vizc', k, l, (V.col || 'rainbow') === k)).join('')}</div>
-      <div class="chips">${[['top', '⬆ 위'], ['mid', '가운데'], ['bottom', '⬇ 아래']].map(([k, l]) => btn('vizp', k, l, (V.pos || 'bottom') === k)).join('')}${[[.7, '작게'], [1, '보통'], [1.4, '크게']].map(([k, l]) => btn('vizs', k, l, (V.size || 1) === k)).join('')}</div>` : ''}
+    <h4>🎶 노래 스티커 <small>(미리보기에서 손가락으로 옮기고 · 두 손가락으로 크기)</small></h4><div class="chips">${btn('viz', 'off', '끄기', !V.on)}${STYLES.map(([k, l]) => btn('viz', k, l, V.on && V.k === k)).join('')}</div>
+    ${V.on ? `<div class="chips">${[['rainbow', '🌈 무지개'], ['white', '🤍 흰색'], ['neon', '💜 네온'], ['gold', '✨ 금색'], ['pink', '🩷 분홍'], ['sky', '🩵 하늘']].map(([k, l]) => btn('vizc', k, l, (V.col || 'rainbow') === k)).join('')}</div>
+      <div class="chips">${btn('vizm', 'song', '🎵 노래 따라', V.mode !== 'auto')}${btn('vizm', 'auto', '✨ 그냥 출렁', V.mode === 'auto')}${[[.7, '작게'], [1, '보통'], [1.5, '크게']].map(([k, l]) => btn('vizs', k, l, (V.size || 1) === k)).join('')}${btn('vizc0', 'ctr', '⊕ 가운데로', 0)}</div>
+      <div class="chips">${[[.5, '반투명'], [.8, '조금 투명'], [.95, '선명']].map(([k, l]) => btn('viza', k, l, (V.alpha || .95) === k)).join('')}</div>` : ''}
     <h4>📌 위 큰 제목 (영상 내내)</h4><div class="chips">${btn('ttl', 'off', '끄기', !T.on)}${btn('ttl', 'photo', '🖼 사진 위 글씨', T.on && T.st !== 'band')}${btn('ttl', 'band', '⬛ 검은 띠', T.on && T.st === 'band')}</div>
     ${T.on ? `<input type="text" data-a="ttl1" value="${(T.l1 || '').replace(/"/g, '&quot;')}" placeholder="첫째 줄 (예: 그날에)" style="width:100%;margin-top:6px"><input type="text" data-a="ttl2" value="${(T.l2 || '').replace(/"/g, '&quot;')}" placeholder="둘째 줄 (예: 머물러있네)" style="width:100%;margin-top:6px">
       <div class="chips">${[['#ffe14d', '🟡'], ['#ffffff', '⚪'], ['#ff7eb3', '🩷'], ['#7dd3fc', '🔵'], ['#fb923c', '🟠']].map(([k, l]) => btn('ttlc1', k, '첫 줄 ' + l, (T.c1 || '#ffe14d') === k)).join('')}</div>
@@ -184,6 +255,7 @@ function act(a, v, P, h) {
   if (a === 'songcut') { cutSheet(h); return true; }
   if (a === 'viz') { if (v === 'off') P.viz.on = 0; else { P.viz.on = 1; P.viz.k = v; if (P.music.fileId) spectrum(P.music.fileId); } return 're'; }
   if (a === 'vizc') { P.viz.col = v; return 're'; } if (a === 'vizp') { P.viz.pos = v; return 're'; } if (a === 'vizs') { P.viz.size = +v; return 're'; }
+  if (a === 'vizm') { P.viz.mode = v; return 're'; } if (a === 'viza') { P.viz.alpha = +v; return 're'; } if (a === 'vizc0') { P.viz.x = .5; P.viz.y = .5; return 're'; }
   if (a === 'ttl') { if (v === 'off') P.ttl.on = 0; else { P.ttl.on = 1; P.ttl.st = v; if (!P.ttl.l1 && !P.ttl.l2) { const mt = P.srcs.find(x => x.id === (P.music.full || P.music.fileId)); P.ttl.l1 = mt ? mt.name.replace(/\.\w+$/, '').replace(/_\d+-\d+$/, '').slice(0, 14) : ''; } ED.loadFonts([P.ttl.font || 'blackhan'], (P.ttl.l1 || '') + (P.ttl.l2 || '')).then(() => ED.redraw && ED.redraw()); } return 're'; }
   if (a === 'ttlc1') { P.ttl.c1 = v; return 're'; } if (a === 'ttlc2') { P.ttl.c2 = v; return 're'; } if (a === 'ttls') { P.ttl.size = +v; return 're'; }
   if (a === 'ttlf') { P.ttl.font = v; ED.loadFonts([v], (P.ttl.l1 || '') + (P.ttl.l2 || '')).then(() => ED.redraw && ED.redraw()); return 're'; }
@@ -193,6 +265,6 @@ function input(a, v, P) { if (a === 'ttl1' || a === 'ttl2') { P.ttl = P.ttl || {
 /** 영상 만들기 전에 글꼴 · 막대 준비 */
 async function prep(P) { if (P.ttl && P.ttl.on) await ED.loadFonts([P.ttl.font || 'blackhan'], (P.ttl.l1 || '') + (P.ttl.l2 || '')); if (P.viz && P.viz.on && P.music.fileId) { spectrum(P.music.fileId); for (let i = 0; i < 200 && !(VIZ.get(P.music.fileId) || {}).ready; i++) await new Promise(r => setTimeout(r, 100)); } }
 
-g.BKSONG = { ui, act, input, cutSheet, cutFile, highlight, splitSongs, drawSong, prep, spectrum };
+g.BKSONG = { ui, act, input, cutSheet, cutFile, highlight, splitSongs, drawSong, prep, spectrum, autoSync, vocalRegions };
 ED.drawSong = drawSong;
 })(window);

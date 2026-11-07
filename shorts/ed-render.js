@@ -289,9 +289,13 @@ function drawLyrics(x, W, H, t) {
   lines.forEach((l, i) => {
     const y = cy + i * lh, w = ws[i], x0 = W / 2 - w / 2;
     if (st !== 'band') { x.strokeStyle = 'rgba(0,0,0,.85)'; x.lineWidth = px * .2; x.strokeText(l, W / 2, y); }
-    x.fillStyle = '#ffffff'; x.fillText(l, W / 2, y);
-    if (st === 'karaoke') { const fw = Math.max(0, Math.min(w, done)); done -= w; if (fw > 0) { x.save(); x.beginPath(); x.rect(x0 - 4, y - lh / 2, fw + 4, lh); x.clip(); x.fillStyle = '#ffe14d'; x.strokeStyle = '#7a1f2b'; x.lineWidth = px * .2; x.strokeText(l, W / 2, y); x.fillText(l, W / 2, y); x.restore(); } }
+    x.fillStyle = Ly.c0 || '#ffffff'; x.fillText(l, W / 2, y);
+    if (st === 'karaoke') { const fw = Math.max(0, Math.min(w, done)); done -= w; if (fw > 0) { x.save(); x.beginPath(); x.rect(x0 - 4, y - lh / 2, fw + 4, lh); x.clip(); x.fillStyle = Ly.c1 || '#ffe14d'; x.strokeStyle = Ly.cs || '#7a1f2b'; x.lineWidth = px * .2; x.strokeText(l, W / 2, y); x.fillText(l, W / 2, y); x.restore(); } }
   });
+  if (Ly.two) {   // 🎤 노래방처럼 다음 줄 미리 보기
+    const L = Ly.lines, nx = L.find(q => q.t != null && q.t > A.s + .05 && q.text && q.text !== A.text);
+    if (nx) { const p2 = px * .82; x.font = fspec(font, p2); x.globalAlpha = Math.max(0, a) * .8; const yy = Ly.pos === 'top' ? cy - lh * .95 : cy + lines.length * lh - lh * .1; const nl = wrap(x, nx.text, W * .88 - p2)[0] || ''; if (st !== 'band') { x.strokeStyle = 'rgba(0,0,0,.85)'; x.lineWidth = p2 * .2; x.strokeText(nl, W / 2, yy); } x.fillStyle = Ly.c0 || '#ffffff'; x.fillText(nl, W / 2, yy); }
+  }
   x.restore();
 }
 ED.lyricAt = lyricAt;

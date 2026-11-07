@@ -61,12 +61,21 @@ try {
   if (pk && pk.url && /[?&]ref=1/.test(location.search) && g.BKKIT) { localStorage.removeItem('bkeRefPick'); history.replaceState(null, '', location.pathname); g.BKKIT.refSet('shorts', pk); setTimeout(() => toast('🎯 참고 영상을 붙였어요 — 위 띠에서 ▶ 다시 볼 수 있어요', 2600), 600); }
 } catch (e) { /* 무시 */ }
 setTimeout(shRefBar, 0);
+/* 🎵 BK뮤직 「🎬 쇼츠 만들기」로 왔을 때: 노래 · 가사 · 표지를 바로 담아요 (?song=노래번호) */
+(async () => {
+  const m = location.search.match(/[?&]song=([^&]+)/); if (!m || !g.BKKIT || !g.BKKIT.musicBox) return;
+  history.replaceState(null, '', location.pathname);
+  const id = decodeURIComponent(m[1]), s = (await g.BKKIT.musicBox()).find(x => String(x.id) === id); if (!s) return toast('BK뮤직 노래를 찾지 못했어요', 3000);
+  const r = g.BKKIT.musicOut(s); startPurpose = 'song'; startRatio = ''; renderStart();
+  PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.music[0], title: r.title, lyrics: r.lyrics }); if (r.cover) pushMedia([r.cover]); else renderPend();
+  toast(`🎵 「${s.title || '노래'}」를 담았어요 · 사진을 더 넣고 ✅ 선택 완료`, 4500);
+})();
 $('addBig').addEventListener('click', async () => {
   if (!g.BKKIT) return toast('자료 넣기를 열 수 없어요');
   const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, music: 1, ref: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
   if (!r) return;
   if (r.kind === 'ref') { g.BKKIT.refSet('shorts', r.ref); shRefBar(); toast('🎯 참고 영상을 붙였어요 — 위 띠 · 🎯 참고에서 ▶ 다시 볼 수 있어요', 2600); return; }
-  if (r.music && r.music.length) { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.music[0] }); renderPend(); toast('🎵 노래를 넣었어요' + (r.files && r.files.length ? '' : ' · 사진 · 영상도 1개 이상 넣어 주세요'), 3000); }
+  if (r.music && r.music.length) { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.music[0], title: r.title || '', lyrics: r.lyrics || '' }); if (r.cover) pushMedia([r.cover]); renderPend(); toast('🎵 노래를 넣었어요' + (r.files && r.files.length ? '' : ' · 사진 · 영상도 1개 이상 넣어 주세요'), 3000); }
   if (r.kind === 'files') { if (r.files.length) pushMedia(r.files); }
   else if (r.kind === 'scrap') pushMedia(r.files, '_scrap');
   else if (r.kind === 'music') { /* 위에서 넣었어요 */ }
@@ -86,7 +95,8 @@ $('goDone').addEventListener('click', async () => {
   if (lines.length) { real.forEach((c, i) => { if (lines[i]) c.cap = Object.assign({}, c.cap, { t: lines[i] }); }); if (funny) P.capDef.style = 'variety'; if (lines.length > real.length) toast(`💬 자막 ${lines.length}줄 중 ${real.length}줄만 들어갔어요 (장면이 ${real.length}개)`, 4000); }
   // 🎵 노래
   const mus = extra.find(x => x.kind === 'music');
-  if (mus) { const f = mus.file, id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name }; busy('음악 여는 중…'); const s2 = await ED.loadSource(meta, f); busy(''); if (s2.buf) { meta.dur = s2.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (er) { /* 공간 */ } P.music.kind = 'file'; P.music.fileId = id; if (P.ttl && P.ttl.on && !P.ttl.l1) P.ttl.l1 = f.name.replace(/\.\w+$/, '').slice(0, 14); } else toast('음악 파일을 열 수 없어요 (MP3 · M4A 권장)'); }
+  if (mus) { const f = mus.file, id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name }; busy('음악 여는 중…'); const s2 = await ED.loadSource(meta, f); busy(''); if (s2.buf) { meta.dur = s2.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (er) { /* 공간 */ } P.music.kind = 'file'; P.music.fileId = id; if (P.ttl && P.ttl.on && !P.ttl.l1) P.ttl.l1 = (mus.title || f.name.replace(/\.\w+$/, '')).slice(0, 14);
+    if (mus.lyrics && mus.lyrics.trim()) { const r = lyrParse(mus.lyrics); if (r.lines.length) { P.lyrics = { on: 1, raw: mus.lyrics, rawSet: mus.lyrics, lines: r.lines, timed: r.timed, style: 'karaoke', pos: 'bottom', two: 1 }; if (!r.timed) { if (!(g.BKSONG && g.BKSONG.autoSync(s2.buf, P.lyrics.lines))) lyrSpread(P.lyrics.lines, s2.dur); else P.lyrics.timed = 1; } P.lyrics.lines.sort((p, q) => p.t - q.t); setTimeout(() => toast(`🎤 BK뮤직 가사 ${r.lines.length}줄을 자동으로 맞췄어요 · ▶로 들어 보세요`, 5000), 1500); } } } else toast('음악 파일을 열 수 없어요 (MP3 · M4A 권장)'); }
   if (lines.length || mus || media.some(f => f._scrap || f._card)) { commit(); renderPanel(); }
 });
 async function beginWith(fs) {
@@ -1375,7 +1385,7 @@ async function useCut(cut, fullId, buf) {
   commit(); renderPanel();
   toast(`✂️ ${Math.round(cut.e - cut.s)}초 구간으로 바꿨어요 · 아래 「🎵 노래 끝까지 맞추기」로 사진 시간을 맞춰요`, 4500);
 }
-ED.redraw = () => drawNow();
+ED.redraw = () => drawNow(); ED.commit = () => commit();
 function musFile() { const M = P.music; if (M.kind !== 'file' || !M.fileId) return null; const s = P.srcs.find(x => x.id === M.fileId); return s && s.dur ? s : null; }
 function musFitInfo() {
   const mf = musFile(); if (!mf) return null;
@@ -1455,9 +1465,13 @@ function lyrBox() {
   if (n) {
     h += `<p>✅ 가사 <b>${n}줄</b> · ${Ly.timed ? '시간 맞춤' : '고르게 나눔'}</p>
       <div class="chips"><button type="button" data-a="lyron" data-v="1"${pressed(!!on, true)}>🎤 자막 켜기</button><button type="button" data-a="lyron" data-v="0"${pressed(!!on, false)}>끄기</button></div>
-      <h4>시간 맞추기</h4><div class="btns2"><button type="button" data-a="lyrtapgo" class="pri">👆 노래 들으며 톡톡 맞추기</button><button type="button" data-a="lyreven">↔ 고르게 나누기</button></div>
+      <h4>시간 맞추기</h4><button type="button" data-a="lyrauto" class="pri" style="width:100%;margin-bottom:6px">🎯 자동으로 맞추기 <small style="display:block;font-weight:600">노래에서 목소리 나오는 곳을 찾아 줄마다 시간을 넣어요</small></button><div class="btns2"><button type="button" data-a="lyrtapgo">👆 노래 들으며 톡톡 맞추기</button><button type="button" data-a="lyreven">↔ 고르게 나누기</button></div>
       <div class="chips"><button type="button" data-a="lyrshift" data-v="-0.5">전체 −0.5초 (빨리)</button><button type="button" data-a="lyrshift" data-v="0.5">전체 +0.5초 (늦게)</button></div>
       <h4>모양</h4><div class="chips">${[['karaoke', '🎤 노래방 (노랗게 채워짐)'], ['white', '흰 글씨'], ['band', '검은 띠']].map(([k, nm]) => `<button type="button" data-a="lyrst" data-v="${k}"${pressed(Ly.style || 'karaoke', k)}>${nm}</button>`).join('')}</div>
+      <h4>🎨 노래방 색</h4><div class="chips">${[['#ffffff', '⚪ 흰'], ['#bae6fd', '🩵 하늘'], ['#fde68a', '🟡 연노랑']].map(([k, nm]) => `<button type="button" data-a="lyc0" data-v="${k}"${pressed(Ly.c0 || '#ffffff', k)}>부르기 전 ${nm}</button>`).join('')}</div>
+      <div class="chips">${[['#ffe14d', '🟡 노랑'], ['#ff7eb3', '🩷 분홍'], ['#38bdf8', '🔵 파랑'], ['#4ade80', '🟢 연두'], ['#fb923c', '🟠 주황']].map(([k, nm]) => `<button type="button" data-a="lyc1" data-v="${k}"${pressed(Ly.c1 || '#ffe14d', k)}>채워지는 ${nm}</button>`).join('')}</div>
+      <div class="chips">${[['#7a1f2b', '🟤 진한 빨강'], ['#1e3a8a', '🔵 남색'], ['#111111', '⚫ 검정']].map(([k, nm]) => `<button type="button" data-a="lycs" data-v="${k}"${pressed(Ly.cs || '#7a1f2b', k)}>테두리 ${nm}</button>`).join('')}</div>
+      <div class="chips"><button type="button" data-a="lytwo" data-v="0"${pressed(!Ly.two, true)}>한 줄</button><button type="button" data-a="lytwo" data-v="1"${pressed(!!Ly.two, true)}>🎤 2줄 (다음 줄 미리 보기)</button></div>
       <h4>가사 글씨 크기</h4>${range('lyrsz', Ly.size || 1.3, .6, 2.5, .05, '크기')}
       <div class="chips">${[['bottom', '⬇ 아래'], ['mid', '가운데'], ['top', '⬆ 위']].map(([k, nm]) => `<button type="button" data-a="lyrpos" data-v="${k}"${pressed(Ly.pos || 'bottom', k)}>${nm}</button>`).join('')}</div>
       <h4>톡 반응 보정 <small>사람은 듣고 조금 늦게 눌러요 — 그만큼 당겨서 저장</small></h4>${chips('lylag', [['0', '보정 없음'], ['0.2', '0.2초 (추천)'], ['0.4', '0.4초']], String(Ly.lag == null ? .2 : Ly.lag))}
@@ -1480,6 +1494,9 @@ function lyrCmd0(a, v) {
   if (a === 'lyreven') { lyrSpread(Ly.lines, mf.dur); Ly.timed = 0; commit(); renderPanel(); return toast('↔ 고르게 나눴어요'); }
   if (a === 'lyrshift') { Ly.lines.forEach(x => { x.t = Math.max(0, Math.round((x.t + +v) * 10) / 10); }); commit(); renderPanel(); return; }
   if (a === 'lyrst') { Ly.style = v; commit(); renderPanel(); return; }
+  if (a === 'lyc0' || a === 'lyc1' || a === 'lycs') { Ly[a.slice(2)] = v; commit(); renderPanel(); return; }
+  if (a === 'lytwo') { Ly.two = +v; commit(); renderPanel(); return; }
+  if (a === 'lyrauto') { const s = SRC.get(P.music.fileId); if (!s || !s.buf || !g.BKSONG) return toast('노래를 먼저 넣어 주세요'); busy('🎯 목소리 나오는 곳 찾는 중…'); setTimeout(() => { const ok = g.BKSONG.autoSync(s.buf, Ly.lines); busy(''); if (!ok) return toast('목소리 구간을 찾지 못했어요 · 톡톡 맞추기를 써 주세요'); Ly.lines.sort((p, q) => p.t - q.t); Ly.timed = 1; Ly.on = 1; commit(); renderPanel(); toast('🎯 자동으로 맞췄어요 · ▶로 들어 보고 어긋난 줄만 아래에서 고쳐요', 5000); }, 50); return; }
   if (a === 'lyrpos') { Ly.pos = v; commit(); renderPanel(); return; }
   if (a === 'lyrtapgo') { if (timeline(P).total < mf.dur - 3) toast('💡 영상이 노래보다 짧아요 → 「노래 끝까지 맞추기」를 먼저 하면 끝까지 맞출 수 있어요', 4500); Ly.on = 1; LYT = 0; if (PLAY) pause(); T = 0; renderPanel(); play(); return; }
   if (a === 'lyrfrom') { const k = +v; if (!Ly.lines[k]) return; Ly.on = 1; LYT = k; if (PLAY) pause(); T = Math.max(0, Ly.lines[k].t - 3); renderPanel(); play(); return toast(`👆 ${k + 1}번 줄부터 — 부르기 시작할 때 큰 버튼을 톡`, 3500); }
@@ -1649,6 +1666,7 @@ function pSave() {
   let h = `<div class="grp"><h3>🎬 MP4 영상 만들기</h3><p class="hint" style="margin-top:0">길이 ${fmtS(total)} · 장면 ${P.clips.length}개</p>
     <h4>화면 모양 <small>(여러 개 고르면 차례로 만들어요)</small></h4><div class="chips">${Object.entries(RATIOS).map(([k, v]) => `<button type="button" data-a="xr" data-v="${k}"${pressed(exp.ratios.includes(k), true)}>${v[2]}</button>`).join('')}</div>
     <h4>화질</h4>${chips('xq', [['1080', '1080 (선명)'], ['720', '720 (빠르게 · 오래된 휴대폰)']], exp.q)}
+    ${P.lyrics && P.lyrics.lines && P.lyrics.lines.length ? `<h4>🎤 노래 가사 자막</h4>${chips('xly', [['now', P.lyrics.on ? '자막 있는 것만' : '자막 없는 것만'], ['both', '🎤 있는 것 + 없는 것 둘 다']], exp.ly || 'now')}` : ''}
     <button type="button" data-a="export" class="pri big" ${exp.busy ? 'disabled' : ''}>${exp.busy ? '⏳ 만드는 중…' : '🎬 영상 만들기 (여기서 끝내기)'}</button>
     <button type="button" data-a="toedit" class="bke-go" ${exp.busy ? 'disabled' : ''}>✂️ 만들고 BK에딧에서 최종 편집하러 가기<br><small style="font-weight:700">효과 · 글자 · 더빙은 큰 화면에서</small></button>
     <div id="xprog" ${exp.busy ? '' : 'hidden'}><div class="bar"><i id="xbar"></i></div><p class="hint" id="xtxt"></p><button type="button" data-a="xstop" class="sec">취소</button></div>
@@ -1817,7 +1835,7 @@ $('panel').addEventListener('click', async e => {
     case 'lmcopy': await copy(lmPrompt()); return toast('📋 요청서를 복사했어요');
     case 'lmpaste': { try { const t = await navigator.clipboard.readText(); const ta = $('lmAns'); if (ta) { ta.value = t; LMANS = t; } } catch (er) { toast('칸을 길게 눌러 붙여넣기 해 주세요'); } return; }
     case 'lmapply': return lmApply(($('lmAns') || {}).value || LMANS);
-    case 'lyrfrom': case 'lyrset': case 'lyrai': case 'lyron': case 'lyreven': case 'lyrshift': case 'lyrst': case 'lyrpos': case 'lyrtapgo': case 'lyrtap': case 'lyrtapback': case 'lyrtapstop': return lyrCmd(a, v);
+    case 'lyrfrom': case 'lyrset': case 'lyrai': case 'lyron': case 'lyreven': case 'lyrshift': case 'lyrst': case 'lyrpos': case 'lyrtapgo': case 'lyrtap': case 'lyrtapback': case 'lyrtapstop': case 'lyc0': case 'lyc1': case 'lycs': case 'lytwo': case 'lyrauto': return lyrCmd(a, v);
     case 'alldur': P.clips.forEach(x => { if (x.kind === 'image') x.dur = c.dur; }); toast('모든 사진 길이를 맞췄어요'); return re();
     case 'goinfo': return setTab('info');
     case 'fit': if (c) { c.fit = v; return re(); } return;
@@ -1890,6 +1908,7 @@ $('panel').addEventListener('click', async e => {
     case 'wm': P.wm = +v; return re();
     case 'xr': { const i = exp.ratios.indexOf(v); if (i >= 0) { if (exp.ratios.length > 1) exp.ratios.splice(i, 1); } else exp.ratios.push(v); return renderPanel(); }
     case 'xq': exp.q = +v; return renderPanel();
+    case 'xly': exp.ly = v; return renderPanel();
     case 'export': return doExport();
     case 'xstop': if (exp.ctl) exp.ctl.aborted = true; return;
     case 'rdl': return giveFile(results[+v].blob, results[+v].name);
@@ -1935,12 +1954,16 @@ async function doExport() {
   try {
     for (let k = 0; k < exp.ratios.length; k++) {
       const r = exp.ratios[k], tag = r.replace(':', 'x');
+      const LY = P.lyrics && P.lyrics.lines && P.lyrics.lines.length && exp.ly === 'both' ? [1, 0] : [null], keepOn = P.lyrics ? P.lyrics.on : 0;
+      for (const lv of LY) { if (lv != null) P.lyrics.on = lv;
       const res = await ED.exportMp4(r, exp.q, (p, sec, ph) => {
         const bar = $('xbar'), tx = $('xtxt'); if (!bar) return;
         if (ph === 'prep') { tx.textContent = `(${k + 1}/${exp.ratios.length}) 준비 중…`; return; } if (ph === 'audio') { tx.textContent = `(${k + 1}/${exp.ratios.length}) 소리 만드는 중…`; return; }
         bar.style.width = (p * 100).toFixed(1) + '%'; const left = p > .02 ? sec / p * (1 - p) : 0; tx.textContent = `(${k + 1}/${exp.ratios.length}) ${RATIOS[r][2]} · ${Math.round(p * 100)}%${left ? ' · 약 ' + Math.ceil(left) + '초 남음' : ''}`;
       }, exp.ctl);
-      results.unshift({ blob: res.blob, name: `BK영상_${pp.n.replace(/[\s·]+/g, '')}_${tag}_${stamp()}.mp4`, warning: res.warning });
+      results.unshift({ blob: res.blob, name: `BK영상_${pp.n.replace(/[\s·]+/g, '')}_${tag}${lv == null ? '' : lv ? '_가사' : '_가사없음'}_${stamp()}.mp4`, warning: res.warning });
+      }
+      if (P.lyrics) P.lyrics.on = keepOn;
     }
     toast('🎉 다 만들었어요! 💾 휴대폰에 저장을 눌러 주세요', 5000);
   } catch (e) { toast('만들지 못했어요: ' + e.message, 6000); }
