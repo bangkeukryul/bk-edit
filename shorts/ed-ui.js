@@ -63,12 +63,13 @@ try {
 setTimeout(shRefBar, 0);
 $('addBig').addEventListener('click', async () => {
   if (!g.BKKIT) return toast('자료 넣기를 열 수 없어요');
-  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, ref: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
+  const r = await g.BKKIT.open({ gallery: 1, files: 1, lib: 1, text: 1, music: 1, ref: 1, textModes: [['cap', '💬 자막으로'], ['card', '🟦 글 화면으로']], textHint: '자막 또는 글 화면' });
   if (!r) return;
   if (r.kind === 'ref') { g.BKKIT.refSet('shorts', r.ref); shRefBar(); toast('🎯 참고 영상을 붙였어요 — 위 띠 · 🎯 참고에서 ▶ 다시 볼 수 있어요', 2600); return; }
-  if (r.kind === 'files') pushMedia(r.files);
+  if (r.music && r.music.length) { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.music[0] }); renderPend(); toast('🎵 노래를 넣었어요' + (r.files && r.files.length ? '' : ' · 사진 · 영상도 1개 이상 넣어 주세요'), 3000); }
+  if (r.kind === 'files') { if (r.files.length) pushMedia(r.files); }
   else if (r.kind === 'scrap') pushMedia(r.files, '_scrap');
-  else if (r.kind === 'music') { PEND = PEND.filter(x => isMedia(x) || x.kind !== 'music'); PEND.push({ kind: 'music', file: r.files[0] }); renderPend(); }
+  else if (r.kind === 'music') { /* 위에서 넣었어요 */ }
   else if (r.kind === 'text' && r.as === 'card') { busy('글 화면 만드는 중…'); const [w, h] = ED.outSize(startRatio || PURPOSE[startPurpose].ratio, 1080); const cards = []; for (const para of r.text.split(/\n\s*\n/)) if (para.trim()) cards.push(await g.BKKIT.textCard(para.trim(), w, h)); busy(''); pushMedia(cards, '_card'); }
   else { PEND.push({ kind: r.kind, text: r.text }); renderPend(); }
 });
@@ -85,7 +86,7 @@ $('goDone').addEventListener('click', async () => {
   if (lines.length) { real.forEach((c, i) => { if (lines[i]) c.cap = Object.assign({}, c.cap, { t: lines[i] }); }); if (funny) P.capDef.style = 'variety'; if (lines.length > real.length) toast(`💬 자막 ${lines.length}줄 중 ${real.length}줄만 들어갔어요 (장면이 ${real.length}개)`, 4000); }
   // 🎵 노래
   const mus = extra.find(x => x.kind === 'music');
-  if (mus) { const f = mus.file, id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name }; busy('음악 여는 중…'); const s2 = await ED.loadSource(meta, f); busy(''); if (s2.buf) { meta.dur = s2.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (er) { /* 공간 */ } P.music.kind = 'file'; P.music.fileId = id; } else toast('음악 파일을 열 수 없어요 (MP3 · M4A 권장)'); }
+  if (mus) { const f = mus.file, id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name }; busy('음악 여는 중…'); const s2 = await ED.loadSource(meta, f); busy(''); if (s2.buf) { meta.dur = s2.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (er) { /* 공간 */ } P.music.kind = 'file'; P.music.fileId = id; if (P.ttl && P.ttl.on && !P.ttl.l1) P.ttl.l1 = f.name.replace(/\.\w+$/, '').slice(0, 14); } else toast('음악 파일을 열 수 없어요 (MP3 · M4A 권장)'); }
   if (lines.length || mus || media.some(f => f._scrap || f._card)) { commit(); renderPanel(); }
 });
 async function beginWith(fs) {
@@ -93,7 +94,8 @@ async function beginWith(fs) {
   SRC.clear(); ED.endRaw.clear(); ED.thumbs.clear();
   setP(ED.newProject(startPurpose, startRatio || PURPOSE[startPurpose].ratio)); P.uid = 'sh' + Date.now().toString(36);
   const pp = PURPOSE[P.purpose];
-  P.clips.push(ED.newClip('card', null, { card: 'title', dur: P.purpose === 'memory' ? 4 : 3 }));
+  if (P.purpose === 'song') { P.viz = { on: 1, k: 'bars', col: 'rainbow', pos: 'bottom' }; P.ttl = { on: 1, st: 'photo', l1: '', l2: '' }; P.music.fade = 3; }   // 🎵 노래: 위 큰 제목 · 움직이는 막대로 시작 (여는 글 화면 없이)
+  else P.clips.push(ED.newClip('card', null, { card: 'title', dur: P.purpose === 'memory' ? 4 : 3 }));
   P.clips.push(ED.newClip('card', null, { card: pp.end, dur: pp.end === 'credits' ? 6 : pp.end === 'memorial' ? 5 : 4.5 }));
   hist = []; hi = -1; SEL = -1; T = 1.2;
   showEditor();
@@ -626,6 +628,7 @@ function pEasy(c) {
   if (PAIR) return h + `<div class="estep ok"><b>✅</b><div><h3>노래 · 가사 준비됨</h3><small>${mf ? esc(mf.name || '내 노래') : ''} · 가사 ${nL}줄</small></div></div>` + st(false, '3', '📷 사진마다 시작 가사 고르기', '사진 하나 → 시작할 가사 톡 → 다음 사진') + pairBox();
   h += st(!!mf, '1', '🎵 노래 넣기', mf ? `${esc(mf.name || '내 노래')} · ${fmt(mf.dur)}` : '수노에서 받은 MP3를 골라요');
   h += `<div class="grp"><label class="btnf${mf ? '' : ' big'}">📁 ${mf ? '다른 노래로 바꾸기' : '내 노래(MP3) 고르기'}<input type="file" data-a="musf" accept="audio/*,.mp3,.m4a,.wav" hidden></label></div>`;
+  if (g.BKSONG) h += g.BKSONG.ui(P);   // ✂️ 노래 구간 · 📊 움직이는 막대 · 📌 위 큰 제목
   h += st(nL > 0 && !!Ly.timed, '2', '🎤 가사 넣고 시간 맞추기', nL ? `가사 ${nL}줄 · ${Ly.timed ? '시간 맞춤 ✔' : '아직 고르게만 나눔 → 아래 「👆 노래 들으며 톡톡 맞추기」'}` : '가사를 붙여넣고 「✅ 가사 넣기 (저장)」');
   h += mf ? lyrBox() : '<p class="hint" style="margin:0 0 12px">① 노래를 먼저 넣어 주세요.</p>';
   h += st(false, '3', '📷 사진마다 시작 가사 줄 톡톡', `사진 ${S.length}장 · 순서는 아래 사진 줄 그대로`);
@@ -1356,6 +1359,23 @@ function tapApply() {
    사진 한 장은 3.5~5초가 보기 좋아요 → 노래 1분에 사진 12~17장.
    · ⏱ 사진 시간 늘리기: 지금 사진만으로 노래 길이를 나눔 (한 장이 너무 길어지면 반복을 권함)
    · 🔁 사진 한 번 더 보여 주기: 한 장 4.5초가 되게, 모자란 만큼 사진을 섞어서 뒤쪽에 한 번 더 (같은 사진이 붙어 나오지 않게) */
+/* ✂️ 노래 구간 바꾸기 (song.js) — 고른 구간만 WAV로 따로 만들어 음악으로 · 원래 노래는 그대로 · 가사 박자도 함께 옮겨요 */
+async function useCut(cut, fullId, buf) {
+  const M = P.music, fm = P.srcs.find(x => x.id === fullId), old = M.full && M.fileId !== M.full ? M.fileId : null;
+  if (P.lyricsFull) P.lyrics = JSON.parse(JSON.stringify(P.lyricsFull));
+  const drop = () => { if (old) { P.srcs = P.srcs.filter(x => x.id !== old); try { IDB.del('f', old); } catch (e) { /* 무시 */ } } };
+  if (!cut) { drop(); M.fileId = fullId; M.kind = 'file'; delete M.full; delete M.cut; delete P.lyricsFull; commit(); renderPanel(); return toast('🎶 전체 곡으로 바꿨어요 · 사진 시간은 「노래 끝까지 맞추기」로 맞춰요', 4000); }
+  busy('노래 구간 만드는 중…');
+  const f = g.BKSONG.cutFile(buf, cut, fm && fm.name), id = uid('s'), meta = { id, code: 'A' + (P.nA++), kind: 'audio', name: f.name, cut: 1 };
+  const s = await ED.loadSource(meta, f); busy('');
+  if (!s || !s.buf) return toast('구간을 만들지 못했어요');
+  meta.dur = s.dur; P.srcs.push(meta); try { await IDB.put('f', id, f); } catch (e) { /* 공간 */ }
+  drop(); M.full = fullId; M.fileId = id; M.kind = 'file'; M.cut = cut;
+  if (P.lyrics && P.lyrics.lines && P.lyrics.lines.length) { P.lyricsFull = JSON.parse(JSON.stringify(P.lyrics)); P.lyrics.lines = P.lyrics.lines.filter(l => l.t == null || (l.t >= cut.s - .2 && l.t < cut.e)).map(l => Object.assign({}, l, l.t == null ? {} : { t: Math.max(0, Math.round((l.t - cut.s) * 100) / 100) })); }
+  commit(); renderPanel();
+  toast(`✂️ ${Math.round(cut.e - cut.s)}초 구간으로 바꿨어요 · 아래 「🎵 노래 끝까지 맞추기」로 사진 시간을 맞춰요`, 4500);
+}
+ED.redraw = () => drawNow();
 function musFile() { const M = P.music; if (M.kind !== 'file' || !M.fileId) return null; const s = P.srcs.find(x => x.id === M.fileId); return s && s.dur ? s : null; }
 function musFitInfo() {
   const mf = musFile(); if (!mf) return null;
@@ -1472,7 +1492,7 @@ function lyrCmd0(a, v) {
 function pMus(c) {
   const M = P.music, pp = PURPOSE[P.purpose], L = (g.BKMUSIC && g.BKMUSIC.LIST) || [];
   return `<div class="grp"><h3>🎵 배경 음악</h3><h4>내 음악 (수노 MP3 등)</h4><label class="btnf ${M.kind === 'file' ? 'on' : ''}">📁 내 음악 파일 고르기 ${M.kind === 'file' ? '(넣음)' : ''}<input type="file" data-a="musf" accept="audio/*,.mp3,.m4a,.wav" hidden></label>${musFitBox()}
-    ${M.kind === 'file' ? `<button type="button" data-a="gotab" data-v="lyr" class="sec">🎤 노래방 가사 자막 넣으러 가기</button>` : ''}
+    ${M.kind === 'file' ? `<button type="button" data-a="gotab" data-v="lyr" class="sec">🎤 노래방 가사 자막 넣으러 가기</button>` : ''}${g.BKSONG ? g.BKSONG.ui(P) : ''}
     <h4>프로그램 음악</h4><div class="chips"><button type="button" data-a="mus" data-v="auto"${pressed(M.kind, 'auto')}>✨ 추천 (${esc(g.BKMUSIC ? g.BKMUSIC.label(pp.mus) : pp.mus)})</button><button type="button" data-a="mus" data-v="none"${pressed(M.kind, 'none')}>🔇 음악 없음</button></div>
     ${L.map(([gn, items]) => `<h4>${esc(gn)}</h4><div class="chips">${items.map(([k, n]) => `<button type="button" data-a="mus" data-v="${k}"${pressed(M.kind, k)}>${esc(n)}</button>`).join('')}</div>`).join('')}
     <p class="hint">홍보 영상에는 <b>저작권 걱정 없는 음악</b>만 쓰세요. 기본 음악은 프로그램이 직접 연주해서 괜찮아요.</p>
@@ -1657,6 +1677,7 @@ $('panel').addEventListener('input', e => {
   const el = e.target, a = el.dataset.a, c = cur(); if (!a) { if (el.id === 'aiExtra') aiExtra = el.value; return; }
   const v = el.value, out = el.parentNode.querySelector('output');
   if (el.type === 'range' && out) out.textContent = (el.closest('.rg').querySelector('span').textContent.includes('%') ? Math.round(v * 100) + '%' : (+v).toFixed(+el.step < 1 ? (a === 'in' || a === 'out' ? 2 : 1) : 0));
+  if (g.BKSONG && g.BKSONG.input(a, v, P)) { drawNow(); clearTimeout(saveT); saveT = setTimeout(saveProj, 700); return; }
   if (a === 'cap' && c) { c.cap.t = v; autoGrow(el); drawNow(); return; }
   if (a === 'in' && c) { c.in = Math.min(+v, c.out - .2); out.textContent = fmt(c.in); T = timeline(P).st[SEL] + .01; drawNow(); return; }
   if (a === 'out' && c) { c.out = Math.max(+v, c.in + .2); out.textContent = fmt(c.out); T = timeline(P).st[SEL] + clipLen(c) - (c.hold || 0) - .05; drawNow(); return; }
@@ -1691,6 +1712,7 @@ $('panel').addEventListener('click', async e => {
   const b = e.target.closest('[data-a]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'TEXTAREA') return;
   const a = b.dataset.a, v = b.dataset.v, c = cur(), { st } = timeline(P);
   const re = (noHist) => { commit(noHist); renderPanel(); };
+  if (g.BKSONG) { const r0 = g.BKSONG.act(a, v, P, { toast, useCut }); if (r0) { if (r0 === 're') re(); return; } }
   switch (a) {
     case 'mv': { const j = SEL + +v; if (!c || j < 0 || j >= P.clips.length) return; P.clips.splice(SEL, 1); P.clips.splice(j, 0, c); SEL = j; return re(); }
     case 'dup': { if (!c) return; const d = JSON.parse(JSON.stringify(c)); d.id = uid('c'); P.clips.splice(SEL + 1, 0, d); SEL++; return re(); }

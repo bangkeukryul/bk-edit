@@ -115,7 +115,7 @@ function open(opts) {
   opts = Object.assign({ gallery: 1, files: 1, lib: 1 }, opts || {});
   const B = [
     ['gallery', '📷 사진 · 🎞 영상', '휴대폰 갤러리', 1], ['files', '📁 내 파일', '다운로드한 사진 · 영상'], ['lib', '📥 내 보관함', '담아 둔 사진 · 영상'],
-    ['scrap', '📰 스크랩', '신문 · 기사 캡처 사진'], ['text', '✍️ 글 넣기', opts.textHint || '쓰거나 붙여넣기'], ['funny', '😂 웃긴 말', '붙여넣으면 줄마다 자막'], ['music', '🎵 노래', 'MP3 · 음악 파일'], ['ref', '🎯 내 레퍼런스', '담아 둔 잘된 영상 (따라 할 본보기)', 0, 'wide'],
+    ['scrap', '📰 스크랩', '신문 · 기사 캡처 사진'], ['text', '✍️ 글 넣기', opts.textHint || '쓰거나 붙여넣기'], ['funny', '😂 웃긴 말', '붙여넣으면 줄마다 자막'], ['music', '🎵 노래', 'Suno MP3 · 음악 파일'], ['ref', '🎯 내 레퍼런스', '담아 둔 잘된 영상 (따라 할 본보기)', 0, 'wide'],
   ].filter(b => opts[b[0]]);
   return new Promise(res => {
     const p = panel(`<h3>➕ 자료 넣기 <button type="button" data-x="close">✕</button></h3><div class="g2">${B.map(([k, l, s, hi, cls]) => `<button type="button" class="op${hi ? ' hi' : ''}${cls ? ' ' + cls : ''}" data-k="${k}">${l}<small>${s}</small></button>`).join('')}</div>`);
@@ -124,11 +124,16 @@ function open(opts) {
       if (b.dataset.x === 'close') { p.close(); res(null); return; }
       const k = b.dataset.k; if (!k) return; p.close();
       if (k === 'gallery') { const fs = (await pickFiles('image/*,video/*')).filter(media); if (fs.length) await askSave(fs); res(fs.length ? { kind: 'files', files: fs } : null); }
-      else if (k === 'files') { const fs = (await pickFiles('')).filter(media); if (fs.length) await askSave(fs); else if (fs) { /* 고른 게 없음 */ } res(fs.length ? { kind: 'files', files: fs } : null); }
+      else if (k === 'files') {
+        const all = await pickFiles(''), fs = all.filter(media), au = opts.music ? all.filter(f => /^audio\//.test(f.type) || /\.(mp3|m4a|wav|aac|ogg|flac)$/i.test(f.name || '')) : [];
+        if (fs.length) await askSave(fs);
+        if (!fs.length && !au.length && all.length) alert(opts.music ? '사진 · 영상 · 노래(MP3) 파일만 넣을 수 있어요' : '사진 · 영상 파일만 넣을 수 있어요');
+        res(fs.length || au.length ? { kind: 'files', files: fs, music: au } : null);
+      }
       else if (k === 'lib') { const fs = await fromLib(); res(fs.length ? { kind: 'files', files: fs } : null); }
       else if (k === 'scrap') { const fs = (await pickFiles('image/*')).filter(media); if (fs.length) await askSave(fs); res(fs.length ? { kind: 'scrap', files: fs } : null); }
       else if (k === 'ref') { const it = await refPick(); res(it ? { kind: 'ref', ref: it } : null); }
-      else if (k === 'music') { const fs = await pickFiles('audio/*,.mp3,.m4a,.wav', false); res(fs.length ? { kind: 'music', files: fs } : null); }
+      else if (k === 'music') { const fs = await pickFiles('audio/*,.mp3,.m4a,.wav', false); res(fs.length ? { kind: 'music', files: [], music: fs } : null); }
       else { const r = await textInput(k, k === 'text' ? opts.textModes : null); res(r ? Object.assign({ kind: k }, r) : null); }
     });
   });

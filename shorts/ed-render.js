@@ -210,6 +210,7 @@ function drawFrame(x, W, H, t, opt) {
   for (let k = 0; k < (c.stk || []).length; k++) hits.push(drawSticker(x, W, H, c.stk[k], still ? Math.max(lt, .5) : lt, len, k));   // 오프닝 · 엔딩 카드에도 스티커
   const cb = drawCaption(x, W, H, c, lt, len, still); if (cb) hits.push(cb);
   drawLyrics(x, W, H, t);
+  if (ED.drawSong) ED.drawSong(x, W, H, t);   // 🎵 움직이는 막대 · 위 큰 제목 (song.js)
   drawWatermark(x, W, H, c);
   if (opt.hits) ED.hits = hits.filter(Boolean);
 }
@@ -533,6 +534,7 @@ async function prepare() {
   const P = ED.P, ids = [P.capDef.font, ...Object.values(CAPS).map(s => s.font).filter((f, i, a) => a.indexOf(f) === i && P.clips.some(c => capInfo(c).font === f)), 'blackhan', 'noto', 'gowunbatang'];
   const text = P.clips.map(c => (c.cap || {}).t || '').join('') + Object.values(P.info).join('') + JSON.stringify(brand() || {}) + P.clips.map(c => (c.stk || []).map(s => s.v || '').join('')).join('') + '가나다0123456789';
   await loadFonts(ids, text.slice(0, 4000));
+  if (g.BKSONG) await g.BKSONG.prep(P);
   const B = brand(); if (B && B.logo) { const im = imgFromData(B.logo); if (!im.complete) await new Promise(r => { im.onload = r; im.onerror = r; setTimeout(r, 3000); }); }
   await ensureEnds();
 }
