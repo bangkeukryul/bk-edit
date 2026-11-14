@@ -1205,7 +1205,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && P) 
 function show(id) { ['notAdmin', 'consentPage', 'home', 'editor'].forEach(k => { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
 function boot() {
   if (g.BKLIC && g.BKLIC.INAPP) { $('inapp').hidden = false; $('inappBtn').addEventListener('click', () => { if (!g.BKLIC.openChrome('')) alert('오른쪽 위 메뉴에서 「다른 브라우저로 열기」를 눌러 주세요'); }); }
-  if (!g.BKE_ADMIN) { show('notAdmin'); return; }
+  document.body.classList.toggle('adm', !!g.BKE_ADMIN);   // 🛠 관리자만 보이는 것 (관리자 메뉴 · 🔎 레퍼런스 …)
   let just = false; try { const c = JSON.parse(localStorage.getItem('bkEditConsent') || 'null'); just = !!(c && c.ts && Date.now() - c.ts < 120000); } catch (e) { /* 무시 */ }
   if (!just && (!g.BKE_AGREED || !g.BKTERMS.saved())) { show('consentPage'); g.BKTERMS.ask($('consentBox')).then(() => location.reload()); return; }   // 방금 동의했으면 다시 묻지 않음
   show('home'); renderList();

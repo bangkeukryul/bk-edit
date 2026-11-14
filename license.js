@@ -88,7 +88,7 @@ window.BKLIC={on:ON,pub:PUB,PROGS:PROGS,DEFAULT_LOCK:DEFAULT_LOCK,ACT_URL:ACT_UR
 /* ═════════ 잠금 화면 (window.BK_PROG 가 있는 화면에서만) ═════════ */
 var prog=window.BK_PROG,pendKey='';
 if(!ON||!prog)return;
-var pname=(PROGS.filter(function(p){return p[0]===prog})[0]||[0,'이 프로그램'])[1];
+var pname=window.BK_PNAME||(PROGS.filter(function(p){return p[0]===prog})[0]||[0,'이 프로그램'])[1];   /* BK에딧: 화면 이름만 바꿔 보여 줘요 (라이선스는 BK쇼츠 것) */
 var css='html.bk-lock body>*:not(#bkLicGate){display:none!important}html.bk-lock body{overflow:hidden}'+
  '#bkLicGate{position:fixed;inset:0;z-index:2147483647;background:#f3f6fb;overflow:auto;font:15px/1.6 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#1f2937}'+
  '#bkLicGate .w{max-width:520px;margin:0 auto;padding:22px 16px 40px}#bkLicGate .card{background:#fff;border:1px solid #dce3ee;border-radius:18px;padding:18px;margin-top:12px}'+
